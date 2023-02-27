@@ -6,6 +6,10 @@ const REQUIRED_OPTIONS = [
 	'logLevel'
 ]
 
+const OPTIONS = [
+	...REQUIRED_OPTIONS
+]
+
 const OPTION_TYPES: Record<string, string> = {
 	token: 'string',
 	logLevel: 'string'
@@ -31,15 +35,43 @@ function validateConfig(config: OptionValues) {
 	}
 }
 
+function convertEnvVarType(value: string, type: string) {
+	if (type === 'boolean') {
+		return value === 'true';
+	}
+
+	if (type === 'number') {
+		return Number(value);
+	}
+
+	return value;
+}
+
+function getEnvVariables() {
+	const envVars: Record<string, string | boolean | number> = {};
+
+	for (const option of OPTIONS) {
+		const envVar = toCaps(option);
+
+		if (process.env[envVar]) {
+			envVars[option] = convertEnvVarType((process.env as Record<string, string>)[envVar], OPTION_TYPES[option]);
+		}
+	}
+
+	return envVars;
+}
+
 function getConfig(options: OptionValues): TonelistConfig {
+	const envVars = getEnvVariables();
+
 	const config = {
-		logLevel: options.logLevel,
-		token: options.token ?? process.env.TOKEN
+		...envVars,
+		...options
 	};
 
 	validateConfig(config);
 
-	return config;
+	return config as TonelistConfig;
 }
 
 export default getConfig;

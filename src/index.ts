@@ -21,4 +21,8 @@ const config = getConfig(options);
 
 tonelist.init(config, () => {
 	tonelist.logger.info('Tonelist started!');
+	tonelist.enqueue({
+		channel: '711959134626644018',
+		songURI: '/Users/eric/Development/bots/tonelist-simple/songs/test.mp3',
+	})
 });

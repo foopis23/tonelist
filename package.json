@@ -1,0 +1,31 @@
+{
+  "name": "tonelist-simple",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node dist/index.js",
+    "dev": "nodemon --exec ts-node src/index.ts --log-level=debug",
+    "lint": "eslint . --ext .ts src/",
+    "lint:fix": "eslint . --ext .ts src/--fix",
+    "build": "tsc"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^5.54.0",
+    "@typescript-eslint/parser": "^5.54.0",
+    "eslint": "^8.35.0",
+    "ts-node": "^10.9.1",
+    "typescript": "^4.9.5"
+  },
+  "dependencies": {
+    "@discordjs/voice": "^0.14.0",
+    "commander": "^10.0.0",
+    "discord.js": "^14.7.1",
+    "fastify": "^4.13.0",
+    "libsodium-wrappers": "^0.7.11",
+    "pino": "^8.11.0"
+  }
+}

@@ -4,6 +4,13 @@ import pino, { Logger } from "pino";
 import { EnqueueArgument, TonelistConfig } from "./types";
 import fs from 'fs';
 
+export enum TonelistErrors {
+	InvalidChannel = 'Invalid channel',
+	InvalidChannelType = 'Channel is not a voice channel',
+	ChannelNotJoinable = 'Channel is not joinable',
+	InvalidSongURI = 'Invalid song URI',
+}
+
 export class Tonelist {
 	logger!: Logger;
 	client!: Client;
@@ -37,11 +44,11 @@ export class Tonelist {
 		const fetchedChannel = typeof channel === 'string' ? await this.client.channels.fetch(channel) : channel;
 
 		if (!fetchedChannel) {
-			throw new Error('Invalid channel');
+			throw new Error(TonelistErrors.InvalidChannel);
 		}
 
 		if (!fetchedChannel.isVoiceBased()) {
-			throw new Error('Channel is not a voice channel');
+			throw new Error(TonelistErrors.InvalidChannelType);
 		}
 
 		return fetchedChannel as VoiceChannel;
@@ -53,7 +60,7 @@ export class Tonelist {
 		try {
 			await fs.promises.access(songURI, fs.constants.R_OK)
 		} catch (err) {
-			throw new Error('Invalid song URI');
+			throw new Error(TonelistErrors.InvalidSongURI);
 		}
 
 		return createAudioResource(fs.createReadStream(songURI));
@@ -63,7 +70,7 @@ export class Tonelist {
 		const channel = await this.getVoiceChannel(argument.channel);
 
 		if (!channel.joinable) {
-			throw new Error('Cannot join channel');
+			throw new Error(TonelistErrors.ChannelNotJoinable);
 		}
 
 		const audioResource = await this.convertURIToAudioResource(argument.songURI);

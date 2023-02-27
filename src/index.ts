@@ -1,5 +1,12 @@
 import { program, Option } from 'commander';
 import getConfig from './config';
+import tonelist from './tonelist';
+import path from 'path';
+
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+require('dotenv').config({
+	path: path.resolve(__dirname, '../.env'),
+});
 
 program
 	.name('tonelist')
@@ -12,4 +19,6 @@ program.parse(process.argv);
 const options = program.opts();
 const config = getConfig(options);
 
-console.log(config);
+tonelist.init(config, () => {
+	tonelist.logger.info('Tonelist started!');
+});

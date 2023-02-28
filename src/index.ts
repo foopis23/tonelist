@@ -34,12 +34,4 @@ tonelist.init(config, () => {
 	]).then(async () => {
 		tonelist.logger.info(await tonelist.getQueue({ channel: '711959134626644018' }), 'Enqueued songs');
 	})
-
-	setTimeout(async () => {
-		tonelist.logger.info(await tonelist.getQueue({ channel: '711959134626644018' }), 'Skipping song');
-		await tonelist.flush({
-			channel: '711959134626644018',
-		})
-		tonelist.logger.info(await tonelist.getQueue({ channel: '711959134626644018' }), 'Flushed queue');
-	}, 1000 * 10);
 });

@@ -1,4 +1,4 @@
-import { AudioPlayer, AudioPlayerError, AudioPlayerStatus, createAudioPlayer, joinVoiceChannel, VoiceConnection, VoiceConnectionStatus } from "@discordjs/voice";
+import { AudioPlayer, AudioPlayerError, AudioPlayerStatus, createAudioPlayer, joinVoiceChannel, VoiceConnection } from "@discordjs/voice";
 import { VoiceChannel } from "discord.js";
 import { Logger } from "pino";
 import convertURIToAudioResource from "./helpers/getAudioResourceFromURI";

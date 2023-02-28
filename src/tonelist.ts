@@ -1,8 +1,10 @@
-import { Client, GatewayIntentBits } from "discord.js";
+import { Client, GatewayIntentBits, VoiceChannel } from "discord.js";
 import pino, { Logger } from "pino";
 import { BaseArgument, EnqueueArgument, FlushArgument, SkipArgument, TonelistConfig, TonelistErrors } from "./types";
 import getVoiceChannel from "./helpers/getVoiceChannel";
 import { Jukebox } from "./jukebox";
+import initDB from "./db";
+import QueueModel from "./db/queue";
 
 export class Tonelist {
 	logger!: Logger;
@@ -13,7 +15,7 @@ export class Tonelist {
 		this.guildJukeboxes = new Map();
 	}
 
-	init(config: TonelistConfig, callback?: (tonelist: Tonelist) => void) {
+	async init(config: TonelistConfig, callback?: (tonelist: Tonelist) => void) {
 		this.logger = pino({
 			name: 'Tonelist',
 			level: config.logLevel,
@@ -28,15 +30,35 @@ export class Tonelist {
 			]
 		});
 
-		this.client.on('ready', (client) => {
+		this.client.on('ready', async (client) => {
 			this.logger.info(`Logged in as ${client.user?.tag}!`);
+
+			// restore jukeboxes
+			const queues = await QueueModel.find();
+			for (const queue of queues) {
+				if (queue.queue.length > 0) {
+					try {
+						const channel = await getVoiceChannel(this.client, {
+							channel: queue.channelID
+						});
+
+						const jukebox = await this.getOrCreateJukebox(channel);
+						await jukebox.resume();
+					} catch (error) {
+						this.logger.error(error);
+					}
+				}
+			}
+
 			if (callback) {
 				callback(this);
 			}
 		});
 
+		await initDB(config);
+
 		this.logger.info('Logging in to discord...');
-		this.client.login(config.token);
+		await this.client.login(config.token);
 	}
 
 	public async enqueue(argument: EnqueueArgument) {
@@ -46,23 +68,7 @@ export class Tonelist {
 		});
 
 		// check if jukebox is jukebox needed to be created
-		const guildID = channel.guild.id;
-		if (!this.guildJukeboxes.has(guildID)) {
-			const jukebox = new Jukebox({
-				tonelist: this,
-				channel
-			});
-
-			this.guildJukeboxes.set(guildID, jukebox);
-
-			jukebox.on('exit', () => {
-				jukebox.removeAllListeners();
-				this.guildJukeboxes.delete(guildID);
-			})
-		}
-
-		// get jukebox
-		const jukebox = this.guildJukeboxes.get(guildID);
+		const jukebox = await this.getOrCreateJukebox(channel);
 
 		// if jukebox is not playing to the requested channel, throw error
 		if (jukebox?.connection.joinConfig.channelId !== channel.id) {
@@ -85,12 +91,12 @@ export class Tonelist {
 
 	public async flush(argument: FlushArgument) {
 		const jukebox = await this.getJukebox(argument);
-		return jukebox.flush();
+		return await jukebox.flush();
 	}
 
 	public async getQueue(argument: BaseArgument) {
 		const jukebox = await this.getJukebox(argument);
-		return jukebox.getQueue();
+		return await jukebox.getQueue();
 	}
 
 	private async getJukebox(argument: BaseArgument) {
@@ -110,6 +116,28 @@ export class Tonelist {
 		}
 
 		return jukebox;
+	}
+
+	private async getOrCreateJukebox(channel: VoiceChannel) {
+		const guildID = channel.id;
+
+		if (!this.guildJukeboxes.has(guildID)) {
+			const jukebox = new Jukebox({
+				tonelist: this,
+				channel
+			});
+
+			this.guildJukeboxes.set(guildID, jukebox);
+
+			jukebox.on('exit', () => {
+				jukebox.removeAllListeners();
+				this.guildJukeboxes.delete(guildID);
+			})
+
+			return jukebox;
+		}
+
+		return this.guildJukeboxes.get(guildID) as Jukebox;
 	}
 }
 

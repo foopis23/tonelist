@@ -5,6 +5,7 @@ import convertURIToAudioResource from "./helpers/getAudioResourceFromURI";
 import { Tonelist } from "./tonelist";
 import { EventEmitter } from "events";
 import { TonelistErrors } from "./types";
+import QueueModel from "./db/queue";
 
 type JukeboxArguments = {
 	tonelist: Tonelist,
@@ -15,8 +16,6 @@ type JukeboxArguments = {
 export class Jukebox extends EventEmitter {
 	connection: VoiceConnection;
 	player: AudioPlayer;
-	queue: string[] = [];
-	queuePosition = -1;
 	leaveChannelTimeoutTime: number;
 
 	private leaveChannelTimeout: NodeJS.Timeout | null = null;
@@ -53,16 +52,22 @@ export class Jukebox extends EventEmitter {
 	}
 
 	public async enqueue(songURI: string) {
+		const queue = await this.findOrCreateQueue();
 		this.logger.info(`Enqueuing ${songURI}`);
-		this.queue.push(songURI);
+		queue.queue.push(songURI);
 
 		if (this.player.state.status === AudioPlayerStatus.Idle && !this.fetchingAudioResource) {
 			await this.next();
 		}
+
+		await queue.save();
 	}
 
 	public async next() {
-		if (this.queuePosition + 1 >= this.queue.length) {
+		this.logger.info('Playing next song');
+		const queue = await this.findOrCreateQueue();
+
+		if (queue.queuePosition + 1 >= queue.queue.length) {
 			if (this.leaveChannelTimeout) {
 				return;
 			}
@@ -82,36 +87,69 @@ export class Jukebox extends EventEmitter {
 			return;
 		}
 
-		this.queuePosition++;
+		queue.queuePosition++;
 
 		if (this.leaveChannelTimeout) {
 			clearTimeout(this.leaveChannelTimeout);
 			this.leaveChannelTimeout = null;
 		}
 
-		const songURI = this.queue[this.queuePosition];
-
-		this.logger.info(`Playing ${songURI}`);
-		this.fetchingAudioResource = true;
-		const audioResource = await convertURIToAudioResource(songURI);
-		this.fetchingAudioResource = false;
-		this.player.play(audioResource);
+		const songURI = queue.queue[queue.queuePosition];
+		await Promise.all([
+			this.playSong(songURI),
+			queue.save()
+		]);
 	}
 
 	public async previous() {
-		if (this.queuePosition - 1 < 0) {
+		this.logger.info('Playing previous song');
+		const queue = await this.findOrCreateQueue();
+
+		if (queue.queuePosition - 1 < 0) {
 			throw new Error(TonelistErrors.NoPreviousSong);
 		}
 
-		this.queuePosition--;
+		queue.queuePosition--;
 
-		const songURI = this.queue[this.queuePosition];
+		const songURI = queue.queue[queue.queuePosition];
+		await Promise.all([
+			this.playSong(songURI),
+			queue.save(),
+		]);
+	}
 
-		if (!songURI) {
-			this.logger.info('No more songs in history');
-			return;
+	public async resume() {
+		this.logger.info('Resuming song');
+		const queue = await this.findOrCreateQueue();
+		const songURI = queue.queue[queue.queuePosition];
+		await this.playSong(songURI);
+	}
+
+	public async flush() {
+		this.logger.info('Flushing queue');
+		await QueueModel.updateOne(
+			{ id: this.connection.joinConfig.guildId },
+			{ queue: [], queuePosition: -1 }
+		);
+
+		this.player.stop();
+	}
+
+	public async getQueue() {
+		this.logger.info('Getting queue');
+		const queue = await this.findOrCreateQueue();
+
+		if (!queue) {
+			return null;
 		}
 
+		return {
+			songs: queue?.queue || [],
+			pointer: queue?.queuePosition || -1,
+		}
+	}
+
+	private async playSong(songURI: string) {
 		this.logger.info(`Playing ${songURI}`);
 
 		this.fetchingAudioResource = true;
@@ -120,21 +158,26 @@ export class Jukebox extends EventEmitter {
 		this.player.play(audioResource);
 	}
 
-	public flush() {
-		this.queue = [];
-		this.queuePosition = -1;
-		this.player.stop();
-	}
+	private async findOrCreateQueue() {
+		const queue = await QueueModel.findById(this.connection.joinConfig.guildId);
 
-	public getQueue() {
-		return {
-			songs: this.queue,
-			pointer: this.queuePosition,
+		if (queue) {
+			return queue;
 		}
+
+		return await QueueModel.create({
+			_id: this.connection.joinConfig.guildId,
+			queue: [],
+			queuePosition: -1,
+			channelID: this.connection.joinConfig.channelId,
+		})
 	}
 
 	private onPlayerIdle() {
-		this.next();
+		this.logger.info('Player idle');
+		if (!this.fetchingAudioResource) {
+			this.next();
+		}
 	}
 
 	private onPlayerError(error: AudioPlayerError) {

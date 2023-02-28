@@ -3,6 +3,7 @@ import { Channel } from "discord.js";
 export type TonelistConfig = {
 	logLevel: string;
 	token: string;
+	mongoUri: string;
 }
 
 export type BaseArgument = {

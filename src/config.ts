@@ -3,7 +3,8 @@ import { TonelistConfig } from "./types";
 
 const REQUIRED_OPTIONS = [
 	'token',
-	'logLevel'
+	'logLevel',
+	'mongoUri'
 ]
 
 const OPTIONS = [
@@ -12,7 +13,8 @@ const OPTIONS = [
 
 const OPTION_TYPES: Record<string, string> = {
 	token: 'string',
-	logLevel: 'string'
+	logLevel: 'string',
+	mongoUri: 'string'
 }
 
 function toCaps(str: string) {

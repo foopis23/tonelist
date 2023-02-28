@@ -48,10 +48,17 @@ export class Tonelist {
 		// check if jukebox is jukebox needed to be created
 		const guildID = channel.guild.id;
 		if (!this.guildJukeboxes.has(guildID)) {
-			this.guildJukeboxes.set(guildID, new Jukebox({
+			const jukebox = new Jukebox({
 				tonelist: this,
-				channel,
-			}));
+				channel
+			});
+
+			this.guildJukeboxes.set(guildID, jukebox);
+			
+			jukebox.on('exit', () => {
+				jukebox.removeAllListeners();
+				this.guildJukeboxes.delete(guildID);
+			})
 		}
 
 		// get jukebox

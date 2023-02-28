@@ -1,6 +1,6 @@
 import { Client, GatewayIntentBits } from "discord.js";
 import pino, { Logger } from "pino";
-import { EnqueueArgument, TonelistConfig, TonelistErrors } from "./types";
+import { EnqueueArgument, SkipArgument, TonelistConfig, TonelistErrors } from "./types";
 import getVoiceChannel from "./helpers/getVoiceChannel";
 import { Jukebox } from "./jukebox";
 
@@ -54,7 +54,7 @@ export class Tonelist {
 			});
 
 			this.guildJukeboxes.set(guildID, jukebox);
-			
+
 			jukebox.on('exit', () => {
 				jukebox.removeAllListeners();
 				this.guildJukeboxes.delete(guildID);
@@ -71,6 +71,25 @@ export class Tonelist {
 
 		// enqueue song
 		return await jukebox.enqueue(argument.songURI);
+	}
+
+	public async skip(argument: SkipArgument) {
+		const channel = await getVoiceChannel(this.client, {
+			channel: argument.channel,
+		});
+
+		if (!this.guildJukeboxes.has(channel.guild.id)) {
+			throw new Error(TonelistErrors.BotNotInVoiceChannel);
+		}
+
+		const guildID = channel.guild.id;
+		const jukebox = this.guildJukeboxes.get(guildID) as Jukebox;
+
+		if (jukebox.connection.joinConfig.channelId !== channel.id) {
+			throw new Error(TonelistErrors.JukeboxInUseInDifferentChannel);
+		}
+
+		return await jukebox.next();
 	}
 }
 

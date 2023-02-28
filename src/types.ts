@@ -5,10 +5,16 @@ export type TonelistConfig = {
 	token: string;
 }
 
-export type EnqueueArgument = {
-	channel: Channel | string,
+export type BaseArgument = {
+	channel: Channel | string
+}
+
+export type EnqueueArgument = BaseArgument & {
 	songURI: string
 }
+
+export type SkipArgument = BaseArgument;
+export type PreviousArgument = BaseArgument;
 
 export enum TonelistErrors {
 	InvalidChannel = 'Invalid channel',
@@ -16,4 +22,5 @@ export enum TonelistErrors {
 	ChannelNotJoinable = 'Channel is not joinable',
 	InvalidSongURI = 'Invalid song URI',
 	JukeboxInUseInDifferentChannel = 'Tonelist is in use in a different channel',
+	BotNotInVoiceChannel = 'Tonelist is not in a voice channel',
 }

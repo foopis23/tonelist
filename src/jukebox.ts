@@ -4,6 +4,7 @@ import { Logger } from "pino";
 import convertURIToAudioResource from "./helpers/getAudioResourceFromURI";
 import { Tonelist } from "./tonelist";
 import { EventEmitter } from "events";
+import Queue from "./queue";
 
 type JukeboxArguments = {
 	tonelist: Tonelist,
@@ -14,7 +15,9 @@ type JukeboxArguments = {
 export class Jukebox extends EventEmitter {
 	connection: VoiceConnection;
 	player: AudioPlayer;
-	queue: string[] = [];
+	history: Queue<string> = new Queue();
+	queue: Queue<string> = new Queue();
+	currentSongURI: string | null = null;
 	leaveChannelTimeoutTime: number;
 
 	private leaveChannelTimeout: NodeJS.Timeout | null = null;
@@ -41,17 +44,6 @@ export class Jukebox extends EventEmitter {
 		this.player.on(AudioPlayerStatus.Idle, this.onPlayerIdle.bind(this));
 		this.player.on('error', this.onPlayerError.bind(this));
 
-		// this.player.on(AudioPlayerStatus.Buffering, this.onPlayerBuffering.bind(this));
-		// this.player.on(AudioPlayerStatus.Playing, this.onPlayerPlaying.bind(this));
-		// this.player.on(AudioPlayerStatus.Paused, this.onPlayerPaused.bind(this));
-		// this.player.on(AudioPlayerStatus.AutoPaused, this.onPlayerAutoPaused.bind(this));
-
-		// this.connection.on(VoiceConnectionStatus.Signalling, this.onConnectionSignalling.bind(this));
-		// this.connection.on(VoiceConnectionStatus.Connecting, this.onConnectionConnecting.bind(this));
-		// this.connection.on(VoiceConnectionStatus.Ready, this.onConnectionReady.bind(this));
-		// this.connection.on(VoiceConnectionStatus.Disconnected, this.onConnectionDisconnected.bind(this));
-		// this.connection.on(VoiceConnectionStatus.Destroyed, this.onConnectionDestroyed.bind(this));
-
 		this.connection.on('stateChange', (oldState, newState) => {
 			this.logger.debug(`Voice connection state changed from ${oldState.status} to ${newState.status}`);
 		});
@@ -63,17 +55,25 @@ export class Jukebox extends EventEmitter {
 
 	public async enqueue(songURI: string) {
 		this.logger.info(`Enqueuing ${songURI}`);
-		this.queue.push(songURI);
-		await this.playNext();
+		this.queue.enqueue(songURI);
+
+		if (this.player.state.status === AudioPlayerStatus.Idle) {
+			await this.next();
+		}
 	}
 
-	private async playNext() {
+	public async next() {
 		// check if player is idle and not fetching audio resource
-		if (this.player.state.status !== AudioPlayerStatus.Idle || this.fetchingAudioResource) {
+		if (this.fetchingAudioResource) {
 			return;
 		}
 
-		const songURI = this.queue.shift();
+		if (this.currentSongURI) {
+			this.history.enqueue(this.currentSongURI);
+			this.currentSongURI = null;
+		}
+
+		const songURI = this.queue.dequeue();
 
 		if (!songURI) {
 			if (this.leaveChannelTimeout) {
@@ -106,10 +106,11 @@ export class Jukebox extends EventEmitter {
 		const audioResource = await convertURIToAudioResource(songURI);
 		this.fetchingAudioResource = false;
 		this.player.play(audioResource);
+		this.currentSongURI = songURI;
 	}
 
 	private onPlayerIdle() {
-		this.playNext();
+		this.next();
 	}
 
 	private onPlayerError(error: AudioPlayerError) {

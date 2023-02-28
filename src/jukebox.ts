@@ -4,7 +4,7 @@ import { Logger } from "pino";
 import convertURIToAudioResource from "./helpers/getAudioResourceFromURI";
 import { Tonelist } from "./tonelist";
 import { EventEmitter } from "events";
-import Queue from "./queue";
+import { TonelistErrors } from "./types";
 
 type JukeboxArguments = {
 	tonelist: Tonelist,
@@ -15,9 +15,8 @@ type JukeboxArguments = {
 export class Jukebox extends EventEmitter {
 	connection: VoiceConnection;
 	player: AudioPlayer;
-	history: Queue<string> = new Queue();
-	queue: Queue<string> = new Queue();
-	currentSongURI: string | null = null;
+	queue: string[] = [];
+	queuePosition = -1;
 	leaveChannelTimeoutTime: number;
 
 	private leaveChannelTimeout: NodeJS.Timeout | null = null;
@@ -55,29 +54,17 @@ export class Jukebox extends EventEmitter {
 
 	public async enqueue(songURI: string) {
 		this.logger.info(`Enqueuing ${songURI}`);
-		this.queue.enqueue(songURI);
+		this.queue.push(songURI);
 
-		if (this.player.state.status === AudioPlayerStatus.Idle) {
+		if (this.player.state.status === AudioPlayerStatus.Idle && !this.fetchingAudioResource) {
 			await this.next();
 		}
 	}
 
 	public async next() {
-		// check if player is idle and not fetching audio resource
-		if (this.fetchingAudioResource) {
-			return;
-		}
-
-		if (this.currentSongURI) {
-			this.history.enqueue(this.currentSongURI);
-			this.currentSongURI = null;
-		}
-
-		const songURI = this.queue.dequeue();
-
-		if (!songURI) {
+		if (this.queuePosition + 1 >= this.queue.length) {
 			if (this.leaveChannelTimeout) {
-				clearTimeout(this.leaveChannelTimeout);
+				return;
 			}
 
 			this.logger.info('No more songs in queue');
@@ -95,9 +82,34 @@ export class Jukebox extends EventEmitter {
 			return;
 		}
 
+		this.queuePosition++;
+
 		if (this.leaveChannelTimeout) {
 			clearTimeout(this.leaveChannelTimeout);
 			this.leaveChannelTimeout = null;
+		}
+
+		const songURI = this.queue[this.queuePosition];
+
+		this.logger.info(`Playing ${songURI}`);
+		this.fetchingAudioResource = true;
+		const audioResource = await convertURIToAudioResource(songURI);
+		this.fetchingAudioResource = false;
+		this.player.play(audioResource);
+	}
+
+	public async previous() {
+		if (this.queuePosition - 1 < 0) {
+			throw new Error(TonelistErrors.NoPreviousSong);
+		}
+
+		this.queuePosition--;
+
+		const songURI = this.queue[this.queuePosition];
+
+		if (!songURI) {
+			this.logger.info('No more songs in history');
+			return;
 		}
 
 		this.logger.info(`Playing ${songURI}`);
@@ -106,7 +118,6 @@ export class Jukebox extends EventEmitter {
 		const audioResource = await convertURIToAudioResource(songURI);
 		this.fetchingAudioResource = false;
 		this.player.play(audioResource);
-		this.currentSongURI = songURI;
 	}
 
 	private onPlayerIdle() {
@@ -115,6 +126,7 @@ export class Jukebox extends EventEmitter {
 
 	private onPlayerError(error: AudioPlayerError) {
 		this.logger.error(error);
+		this.next();
 	}
 
 	private onConnectionError() {

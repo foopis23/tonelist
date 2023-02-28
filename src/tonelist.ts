@@ -91,6 +91,25 @@ export class Tonelist {
 
 		return await jukebox.next();
 	}
+
+	public async previous(argument: SkipArgument) {
+		const channel = await getVoiceChannel(this.client, {
+			channel: argument.channel,
+		});
+
+		if (!this.guildJukeboxes.has(channel.guild.id)) {
+			throw new Error(TonelistErrors.BotNotInVoiceChannel);
+		}
+
+		const guildID = channel.guild.id;
+		const jukebox = this.guildJukeboxes.get(guildID) as Jukebox;
+
+		if (jukebox.connection.joinConfig.channelId !== channel.id) {
+			throw new Error(TonelistErrors.JukeboxInUseInDifferentChannel);
+		}
+
+		return await jukebox.previous();
+	}
 }
 
 const tonelist = new Tonelist();

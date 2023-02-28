@@ -23,4 +23,5 @@ export enum TonelistErrors {
 	InvalidSongURI = 'Invalid song URI',
 	JukeboxInUseInDifferentChannel = 'Tonelist is in use in a different channel',
 	BotNotInVoiceChannel = 'Tonelist is not in a voice channel',
+	NoPreviousSong = 'No previous song',
 }

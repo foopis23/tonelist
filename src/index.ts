@@ -29,4 +29,18 @@ tonelist.init(config, () => {
 		channel: '711959134626644018',
 		songURI: './songs/test2.mp3',
 	})
+
+	setTimeout(() => {
+		tonelist.logger.info('Skipping song...');
+		tonelist.skip({
+			channel: '711959134626644018',
+		})
+	}, 1000 * 5)
+
+	setTimeout(() => {
+		tonelist.logger.info('Playing previous song...');
+		tonelist.previous({
+			channel: '711959134626644018',
+		})
+	}, 1000 * 10)
 });

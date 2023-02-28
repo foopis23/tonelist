@@ -31,16 +31,8 @@ tonelist.init(config, () => {
 	})
 
 	setTimeout(() => {
-		tonelist.logger.info('Skipping song...');
-		tonelist.skip({
+		tonelist.flush({
 			channel: '711959134626644018',
 		})
-	}, 1000 * 5)
-
-	setTimeout(() => {
-		tonelist.logger.info('Playing previous song...');
-		tonelist.previous({
-			channel: '711959134626644018',
-		})
-	}, 1000 * 10)
+	}, 1000 * 10);
 });

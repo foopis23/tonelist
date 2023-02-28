@@ -1,6 +1,6 @@
 import { Client, GatewayIntentBits } from "discord.js";
 import pino, { Logger } from "pino";
-import { EnqueueArgument, SkipArgument, TonelistConfig, TonelistErrors } from "./types";
+import { BaseArgument, EnqueueArgument, FlushArgument, SkipArgument, TonelistConfig, TonelistErrors } from "./types";
 import getVoiceChannel from "./helpers/getVoiceChannel";
 import { Jukebox } from "./jukebox";
 
@@ -73,7 +73,7 @@ export class Tonelist {
 		return await jukebox.enqueue(argument.songURI);
 	}
 
-	public async skip(argument: SkipArgument) {
+	private async getJukebox(argument: BaseArgument) {
 		const channel = await getVoiceChannel(this.client, {
 			channel: argument.channel,
 		});
@@ -89,26 +89,22 @@ export class Tonelist {
 			throw new Error(TonelistErrors.JukeboxInUseInDifferentChannel);
 		}
 
+		return jukebox;
+	}
+
+	public async skip(argument: SkipArgument) {
+		const jukebox = await this.getJukebox(argument);
 		return await jukebox.next();
 	}
 
 	public async previous(argument: SkipArgument) {
-		const channel = await getVoiceChannel(this.client, {
-			channel: argument.channel,
-		});
-
-		if (!this.guildJukeboxes.has(channel.guild.id)) {
-			throw new Error(TonelistErrors.BotNotInVoiceChannel);
-		}
-
-		const guildID = channel.guild.id;
-		const jukebox = this.guildJukeboxes.get(guildID) as Jukebox;
-
-		if (jukebox.connection.joinConfig.channelId !== channel.id) {
-			throw new Error(TonelistErrors.JukeboxInUseInDifferentChannel);
-		}
-
+		const jukebox = await this.getJukebox(argument);
 		return await jukebox.previous();
+	}
+
+	public async flush(argument: FlushArgument) {
+		const jukebox = await this.getJukebox(argument);
+		return jukebox.flush();
 	}
 }
 

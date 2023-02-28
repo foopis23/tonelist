@@ -120,6 +120,12 @@ export class Jukebox extends EventEmitter {
 		this.player.play(audioResource);
 	}
 
+	public flush() {
+		this.queue = [];
+		this.queuePosition = -1;
+		this.player.stop();
+	}
+
 	private onPlayerIdle() {
 		this.next();
 	}

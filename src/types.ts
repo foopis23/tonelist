@@ -15,6 +15,7 @@ export type EnqueueArgument = BaseArgument & {
 
 export type SkipArgument = BaseArgument;
 export type PreviousArgument = BaseArgument;
+export type FlushArgument = BaseArgument;
 
 export enum TonelistErrors {
 	InvalidChannel = 'Invalid channel',

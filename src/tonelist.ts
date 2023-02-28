@@ -88,6 +88,11 @@ export class Tonelist {
 		return jukebox.flush();
 	}
 
+	public async getQueue(argument: BaseArgument) {
+		const jukebox = await this.getJukebox(argument);
+		return jukebox.getQueue();
+	}
+
 	private async getJukebox(argument: BaseArgument) {
 		const channel = await getVoiceChannel(this.client, {
 			channel: argument.channel,

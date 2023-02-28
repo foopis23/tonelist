@@ -126,6 +126,13 @@ export class Jukebox extends EventEmitter {
 		this.player.stop();
 	}
 
+	public getQueue() {
+		return {
+			songs: this.queue,
+			pointer: this.queuePosition,
+		}
+	}
+
 	private onPlayerIdle() {
 		this.next();
 	}

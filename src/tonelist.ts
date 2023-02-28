@@ -1,19 +1,20 @@
-import { createAudioPlayer, createAudioResource, joinVoiceChannel } from "@discordjs/voice";
+import { createAudioPlayer, createAudioResource, joinVoiceChannel, VoiceConnectionStatus } from "@discordjs/voice";
 import { Client, GatewayIntentBits, Channel, VoiceChannel } from "discord.js";
 import pino, { Logger } from "pino";
-import { EnqueueArgument, TonelistConfig } from "./types";
+import { EnqueueArgument, TonelistConfig, TonelistErrors } from "./types";
 import fs from 'fs';
-
-export enum TonelistErrors {
-	InvalidChannel = 'Invalid channel',
-	InvalidChannelType = 'Channel is not a voice channel',
-	ChannelNotJoinable = 'Channel is not joinable',
-	InvalidSongURI = 'Invalid song URI',
-}
+import getVoiceChannel from "./getVoiceChannel";
+import { Jukebox } from "./jukebox";
+import convertURIToAudioResource from "./getAudioResourceFromURI";
 
 export class Tonelist {
 	logger!: Logger;
 	client!: Client;
+	guildJukeboxes: Map<string, Jukebox>;
+
+	constructor() {
+		this.guildJukeboxes = new Map();
+	}
 
 	init(config: TonelistConfig, callback?: (tonelist: Tonelist) => void) {
 		this.logger = pino({
@@ -40,51 +41,31 @@ export class Tonelist {
 		this.client.login(config.token);
 	}
 
-	private async getVoiceChannel(channel: string | Channel): Promise<VoiceChannel> {
-		const fetchedChannel = typeof channel === 'string' ? await this.client.channels.fetch(channel) : channel;
-
-		if (!fetchedChannel) {
-			throw new Error(TonelistErrors.InvalidChannel);
-		}
-
-		if (!fetchedChannel.isVoiceBased()) {
-			throw new Error(TonelistErrors.InvalidChannelType);
-		}
-
-		return fetchedChannel as VoiceChannel;
-	}
-
-	private async convertURIToAudioResource(songURI: string) {
-		// validate song uri is file path
-		// create audio resource
-		try {
-			await fs.promises.access(songURI, fs.constants.R_OK)
-		} catch (err) {
-			throw new Error(TonelistErrors.InvalidSongURI);
-		}
-
-		return createAudioResource(fs.createReadStream(songURI));
-	}
-
 	public async enqueue(argument: EnqueueArgument) {
-		const channel = await this.getVoiceChannel(argument.channel);
+		// get channel to enqueue in
+		const channel = await getVoiceChannel(this.client, {
+			channel: argument.channel,
+		});
 
-		if (!channel.joinable) {
-			throw new Error(TonelistErrors.ChannelNotJoinable);
+		// check if jukebox is jukebox needed to be created
+		const guildID = channel.guild.id;
+		if (!this.guildJukeboxes.has(guildID)) {
+			this.guildJukeboxes.set(guildID, new Jukebox({
+				tonelist: this,
+				channel,
+			}));
 		}
 
-		const audioResource = await this.convertURIToAudioResource(argument.songURI);
+		// get jukebox
+		const jukebox = this.guildJukeboxes.get(guildID);
 
-		const connection = joinVoiceChannel({
-			channelId: channel.id,
-			guildId: channel.guild.id,
-			adapterCreator: channel.guild.voiceAdapterCreator,
-		})
+		// if jukebox is not playing to the requested channel, throw error
+		if (jukebox?.connection.joinConfig.channelId !== channel.id) {
+			throw new Error(TonelistErrors.JukeboxInUseInDifferentChannel);
+		}
 
-		const player = createAudioPlayer();
-		connection.subscribe(player);
-
-		player.play(audioResource);
+		// enqueue song
+		jukebox.enqueue(argument.songURI);
 	}
 }
 

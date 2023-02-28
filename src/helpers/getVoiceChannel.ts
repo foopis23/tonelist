@@ -1,5 +1,5 @@
 import { Channel, Client, VoiceChannel } from "discord.js";
-import { TonelistErrors } from "./types";
+import { TonelistErrors } from "../types";
 
 async function getVoiceChannel(client: Client, args: { channel: string | Channel }): Promise<VoiceChannel> {
 	const { channel } = args;

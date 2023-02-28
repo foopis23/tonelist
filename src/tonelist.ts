@@ -1,11 +1,8 @@
-import { createAudioPlayer, createAudioResource, joinVoiceChannel, VoiceConnectionStatus } from "@discordjs/voice";
-import { Client, GatewayIntentBits, Channel, VoiceChannel } from "discord.js";
+import { Client, GatewayIntentBits } from "discord.js";
 import pino, { Logger } from "pino";
 import { EnqueueArgument, TonelistConfig, TonelistErrors } from "./types";
-import fs from 'fs';
-import getVoiceChannel from "./getVoiceChannel";
+import getVoiceChannel from "./helpers/getVoiceChannel";
 import { Jukebox } from "./jukebox";
-import convertURIToAudioResource from "./getAudioResourceFromURI";
 
 export class Tonelist {
 	logger!: Logger;
@@ -18,6 +15,7 @@ export class Tonelist {
 
 	init(config: TonelistConfig, callback?: (tonelist: Tonelist) => void) {
 		this.logger = pino({
+			name: 'Tonelist',
 			level: config.logLevel,
 		});
 

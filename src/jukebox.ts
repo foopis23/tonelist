@@ -1,6 +1,7 @@
-import { AudioPlayer, AudioPlayerStatus, createAudioPlayer, joinVoiceChannel, VoiceConnection, VoiceConnectionStatus } from "@discordjs/voice";
+import { AudioPlayer, AudioPlayerError, AudioPlayerStatus, createAudioPlayer, joinVoiceChannel, VoiceConnection, VoiceConnectionStatus } from "@discordjs/voice";
 import { VoiceChannel } from "discord.js";
-import convertURIToAudioResource from "./getAudioResourceFromURI";
+import { Logger } from "pino";
+import convertURIToAudioResource from "./helpers/getAudioResourceFromURI";
 import { Tonelist } from "./tonelist";
 
 export class Jukebox {
@@ -10,9 +11,12 @@ export class Jukebox {
 
 	private fetchingAudioResource = false;
 	private tonelist: Tonelist;
+	private logger: Logger;
 
 	constructor(args: { tonelist: Tonelist, channel: VoiceChannel }) {
 		const { tonelist, channel } = args;
+
+		this.logger = tonelist.logger.child({ name: 'Jukebox', guildID: channel.guild.id, channelID: channel.id })
 
 		this.tonelist = tonelist;
 
@@ -24,23 +28,31 @@ export class Jukebox {
 		this.player = createAudioPlayer();
 		this.connection.subscribe(this.player);
 
-		this.connection.on(VoiceConnectionStatus.Signalling, this.onConnectionSignalling.bind(this));
-		this.connection.on(VoiceConnectionStatus.Connecting, this.onConnectionConnecting.bind(this));
-		this.connection.on(VoiceConnectionStatus.Ready, this.onConnectionReady.bind(this));
-		this.connection.on(VoiceConnectionStatus.Disconnected, this.onConnectionDisconnected.bind(this));
-		this.connection.on(VoiceConnectionStatus.Destroyed, this.onConnectionDestroyed.bind(this));
+		// this.connection.on(VoiceConnectionStatus.Signalling, this.onConnectionSignalling.bind(this));
+		// this.connection.on(VoiceConnectionStatus.Connecting, this.onConnectionConnecting.bind(this));
+		// this.connection.on(VoiceConnectionStatus.Ready, this.onConnectionReady.bind(this));
+		// this.connection.on(VoiceConnectionStatus.Disconnected, this.onConnectionDisconnected.bind(this));
+		// this.connection.on(VoiceConnectionStatus.Destroyed, this.onConnectionDestroyed.bind(this));
 		this.connection.on('error', this.onConnectionError.bind(this));
 
 		this.player.on(AudioPlayerStatus.Idle, this.onPlayerIdle.bind(this));
-		this.player.on(AudioPlayerStatus.Buffering, this.onPlayerBuffering.bind(this));
-		this.player.on(AudioPlayerStatus.Playing, this.onPlayerPlaying.bind(this));
-		this.player.on(AudioPlayerStatus.Paused, this.onPlayerPaused.bind(this));
-		this.player.on(AudioPlayerStatus.AutoPaused, this.onPlayerAutoPaused.bind(this));
+		// this.player.on(AudioPlayerStatus.Buffering, this.onPlayerBuffering.bind(this));
+		// this.player.on(AudioPlayerStatus.Playing, this.onPlayerPlaying.bind(this));
+		// this.player.on(AudioPlayerStatus.Paused, this.onPlayerPaused.bind(this));
+		// this.player.on(AudioPlayerStatus.AutoPaused, this.onPlayerAutoPaused.bind(this));
 		this.player.on('error', this.onPlayerError.bind(this));
+
+		this.connection.on('stateChange', (oldState, newState) => {
+			this.logger.debug(`Voice connection state changed from ${oldState.status} to ${newState.status}`);
+		});
+
+		this.player.on('stateChange', (oldState, newState) => {
+			this.logger.debug(`Audio player state changed from ${oldState.status} to ${newState.status}`);
+		});
 	}
 
 	public async enqueue(songURI: string) {
-		this.tonelist.logger.info(`Enqueuing ${songURI}`);
+		this.logger.info(`Enqueuing ${songURI}`);
 		this.queue.push(songURI);
 		await this.playNext();
 	}
@@ -51,13 +63,14 @@ export class Jukebox {
 			return;
 		}
 
-		this.tonelist.logger.info('Playing next song');
-
 		const songURI = this.queue.shift();
 
 		if (!songURI) {
+			this.logger.info('No more songs in queue');
 			return;
 		}
+
+		this.logger.info(`Playing ${songURI}`);
 
 		this.fetchingAudioResource = true;
 		const audioResource = await convertURIToAudioResource(songURI);
@@ -66,51 +79,50 @@ export class Jukebox {
 	}
 
 	private onPlayerIdle() {
-		this.tonelist.logger.info('Player is idle');
 		this.playNext();
 	}
 
-	private onPlayerBuffering() {
-		this.tonelist.logger.info('Player is buffering');
+	// private onPlayerBuffering() {
+
+	// }
+
+	// private onPlayerPlaying() {
+
+	// }
+
+	// private onPlayerPaused() {
+
+	// }
+
+	// private onPlayerAutoPaused() {
+
+	// }
+
+	private onPlayerError(error: AudioPlayerError) {
+		this.logger.error(error);
 	}
 
-	private onPlayerPlaying() {
-		this.tonelist.logger.info('Player is playing');
-	}
+	// private onConnectionSignalling() {
 
-	private onPlayerPaused() {
-		this.tonelist.logger.info('Player is paused');
-	}
+	// }
 
-	private onPlayerAutoPaused() {
-		this.tonelist.logger.info('Player is auto paused');
-	}
+	// private onConnectionConnecting() {
 
-	private onPlayerError() {
-		this.tonelist.logger.info('Player error');
-	}
+	// }
 
-	private onConnectionSignalling() {
-		this.tonelist.logger.info('Connection is signalling');
-	}
+	// private onConnectionReady() {
 
-	private onConnectionConnecting() {
-		this.tonelist.logger.info('Connection is connecting');
-	}
+	// }
 
-	private onConnectionReady() {
-		this.tonelist.logger.info('Connection is ready');
-	}
+	// private onConnectionDisconnected() {
 
-	private onConnectionDisconnected() {
-		this.tonelist.logger.info('Connection is disconnected');
-	}
+	// }
 
-	private onConnectionDestroyed() {
-		this.tonelist.logger.info('Connection is destroyed');
-	}
+	// private onConnectionDestroyed() {
+
+	// }
 
 	private onConnectionError() {
-		this.tonelist.logger.info('Connection error');
+		this.logger.info('Connection error');
 	}
 }

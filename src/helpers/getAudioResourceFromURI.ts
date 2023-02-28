@@ -1,4 +1,4 @@
-import { TonelistErrors } from "./types";
+import { TonelistErrors } from "../types";
 import { createAudioResource } from "@discordjs/voice";
 import fs from 'fs';
 

@@ -23,7 +23,7 @@ tonelist.init(config, () => {
 	tonelist.logger.info('Tonelist started!');
 	tonelist.enqueue({
 		channel: '711959134626644018',
-		songURI: './songs/test2.mp3',
+		songURI: './songs/test.mp3',
 	})
 	tonelist.enqueue({
 		channel: '711959134626644018',

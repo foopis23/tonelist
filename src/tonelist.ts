@@ -73,6 +73,21 @@ export class Tonelist {
 		return await jukebox.enqueue(argument.songURI);
 	}
 
+	public async skip(argument: SkipArgument) {
+		const jukebox = await this.getJukebox(argument);
+		return await jukebox.next();
+	}
+
+	public async previous(argument: SkipArgument) {
+		const jukebox = await this.getJukebox(argument);
+		return await jukebox.previous();
+	}
+
+	public async flush(argument: FlushArgument) {
+		const jukebox = await this.getJukebox(argument);
+		return jukebox.flush();
+	}
+
 	private async getJukebox(argument: BaseArgument) {
 		const channel = await getVoiceChannel(this.client, {
 			channel: argument.channel,
@@ -90,21 +105,6 @@ export class Tonelist {
 		}
 
 		return jukebox;
-	}
-
-	public async skip(argument: SkipArgument) {
-		const jukebox = await this.getJukebox(argument);
-		return await jukebox.next();
-	}
-
-	public async previous(argument: SkipArgument) {
-		const jukebox = await this.getJukebox(argument);
-		return await jukebox.previous();
-	}
-
-	public async flush(argument: FlushArgument) {
-		const jukebox = await this.getJukebox(argument);
-		return jukebox.flush();
 	}
 }
 

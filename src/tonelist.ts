@@ -70,7 +70,7 @@ export class Tonelist {
 		}
 
 		// enqueue song
-		jukebox.enqueue(argument.songURI);
+		return await jukebox.enqueue(argument.songURI);
 	}
 }
 

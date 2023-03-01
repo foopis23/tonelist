@@ -13,8 +13,6 @@ data.addStringOption(option => option
 	.setRequired(true)
 );
 
-
-
 const Enqueue: CommandConfig = {
 	data: data,
 	execute: async (interaction, { tonelist }) => {

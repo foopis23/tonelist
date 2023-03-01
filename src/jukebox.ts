@@ -55,12 +55,11 @@ export class Jukebox extends EventEmitter {
 		const queue = await this.findOrCreateQueue();
 		this.logger.info(`Enqueuing ${songURI}`);
 		queue.queue.push(songURI);
+		await queue.save();
 
 		if (this.player.state.status === AudioPlayerStatus.Idle && !this.fetchingAudioResource) {
 			await this.next();
 		}
-
-		await queue.save();
 	}
 
 	public async next() {
@@ -68,8 +67,19 @@ export class Jukebox extends EventEmitter {
 		const queue = await this.findOrCreateQueue();
 
 		if (queue.queuePosition + 1 >= queue.queue.length) {
+			if (queue.queuePosition + 1 > queue.queue.length) {
+				throw new Error(TonelistErrors.QueuePositionOutOfBounds);
+			}
+
+			queue.queuePosition++;
+			await queue.save();
+
+			if (this.player.state.status === AudioPlayerStatus.Playing) {
+				this.player.stop();
+			}
+
 			if (this.leaveChannelTimeout) {
-				return;
+				return false;
 			}
 
 			this.logger.info('No more songs in queue');
@@ -84,7 +94,7 @@ export class Jukebox extends EventEmitter {
 				this.leaveChannelTimeout = null;
 			}, this.leaveChannelTimeoutTime);
 
-			return;
+			return false;
 		}
 
 		queue.queuePosition++;
@@ -99,6 +109,8 @@ export class Jukebox extends EventEmitter {
 			this.playSong(songURI),
 			queue.save()
 		]);
+
+		return true
 	}
 
 	public async previous() {

@@ -30,6 +30,7 @@ export enum TonelistErrors {
 	JukeboxInUseInDifferentChannel = 'Tonelist is in use in a different channel',
 	BotNotInVoiceChannel = 'Tonelist is not in a voice channel',
 	NoPreviousSong = 'No previous song',
+	QueuePositionOutOfBounds = 'There are no more songs in the queue',
 }
 
 export type CommandContext = {

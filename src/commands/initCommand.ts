@@ -3,7 +3,7 @@ import { Tonelist } from '../tonelist';
 import { CommandConfig } from '../types';
 
 // commands
-import Ping from './ping';
+// import Ping from './ping';
 import Enqueue from './enqueue';
 import List from './list';
 
@@ -16,7 +16,7 @@ type InitCommandOptions = {
 }
 
 const commands: CommandConfig[] = [
-	Ping,
+	// Ping,
 	Enqueue,
 	List
 ]

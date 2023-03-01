@@ -113,7 +113,10 @@ export class Tonelist {
 			channel: argument.channel,
 		});
 
+		this.logger.debug({ channel: channel.id, guild: channel.guild.id, jukeboxes: Array.from(this.guildJukeboxes.keys()) }, 'getJukebox');
+
 		if (!this.guildJukeboxes.has(channel.guild.id)) {
+			
 			throw new Error(TonelistErrors.BotNotInVoiceChannel);
 		}
 
@@ -128,7 +131,7 @@ export class Tonelist {
 	}
 
 	private async getOrCreateJukebox(channel: VoiceChannel) {
-		const guildID = channel.id;
+		const guildID = channel.guild.id;
 
 		if (!this.guildJukeboxes.has(guildID)) {
 			const jukebox = new Jukebox({

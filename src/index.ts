@@ -26,13 +26,6 @@ const config: TonelistConfig = {
 	useTestGuilds: true
 }
 
-console.log(config);
-
 tonelist.init(config, async () => {
 	tonelist.logger.info('Tonelist started!');
-
-	await tonelist.enqueue({
-		channel: '711959134626644018',
-		songURI: './songs/test.mp3',
-	});
 });

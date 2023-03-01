@@ -5,6 +5,7 @@ import { CommandConfig } from '../types';
 // commands
 import Ping from './ping';
 import Enqueue from './enqueue';
+import List from './list';
 
 type InitCommandOptions = {
 	token: string;
@@ -16,7 +17,8 @@ type InitCommandOptions = {
 
 const commands: CommandConfig[] = [
 	Ping,
-	Enqueue
+	Enqueue,
+	List
 ]
 
 async function initCommands(options: InitCommandOptions) {

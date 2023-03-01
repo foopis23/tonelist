@@ -4,6 +4,7 @@ import { CommandConfig } from '../types';
 
 // commands
 import Ping from './ping';
+import Enqueue from './enqueue';
 
 type InitCommandOptions = {
 	token: string;
@@ -15,6 +16,7 @@ type InitCommandOptions = {
 
 const commands: CommandConfig[] = [
 	Ping,
+	Enqueue
 ]
 
 async function initCommands(options: InitCommandOptions) {
@@ -48,7 +50,14 @@ async function initCommands(options: InitCommandOptions) {
 			});
 		} catch (error) {
 			options.tonelist.logger.error(error);
-			await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+
+			const msg = (error as Error).message;
+
+			if (interaction.replied || interaction.deferred) {
+				await interaction.followUp({ content: msg, ephemeral: true });
+			} else {
+				await interaction.reply({ content: msg, ephemeral: true });
+			}
 		}
 	});
 }

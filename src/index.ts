@@ -35,9 +35,4 @@ tonelist.init(config, async () => {
 		channel: '711959134626644018',
 		songURI: './songs/test.mp3',
 	});
-
-	await tonelist.enqueue({
-		channel: '711959134626644018',
-		songURI: './songs/test2.mp3',
-	});
 });

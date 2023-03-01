@@ -1,9 +1,13 @@
-import { Channel } from "discord.js";
+import { Channel, CommandInteraction, SlashCommandBuilder } from "discord.js";
+import { Tonelist } from "./tonelist";
 
 export type TonelistConfig = {
 	logLevel: string;
 	token: string;
 	mongoUri: string;
+	useTestGuilds?: boolean;
+	testGuilds?: string[];
+	clientId: string;
 }
 
 export type BaseArgument = {
@@ -26,4 +30,15 @@ export enum TonelistErrors {
 	JukeboxInUseInDifferentChannel = 'Tonelist is in use in a different channel',
 	BotNotInVoiceChannel = 'Tonelist is not in a voice channel',
 	NoPreviousSong = 'No previous song',
+}
+
+export type CommandContext = {
+	tonelist: Tonelist
+};
+
+export type CommandExecuteAction = (interaction: CommandInteraction, context: CommandContext) => Promise<void>;
+
+export type CommandConfig = {
+	data: SlashCommandBuilder,
+	execute: CommandExecuteAction
 }

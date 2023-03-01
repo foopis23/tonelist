@@ -1,7 +1,7 @@
 import { AudioPlayer, AudioPlayerError, AudioPlayerStatus, createAudioPlayer, joinVoiceChannel, VoiceConnection } from "@discordjs/voice";
 import { VoiceChannel } from "discord.js";
 import { Logger } from "pino";
-import convertURIToAudioResource from "./helpers/getAudioResourceFromURI";
+import convertURIToAudioResource from "./voice/getAudioResourceFromURI";
 import { Tonelist } from "./tonelist";
 import { EventEmitter } from "events";
 import { TonelistErrors } from "./types";

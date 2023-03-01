@@ -1,10 +1,11 @@
 import { Client, GatewayIntentBits, VoiceChannel } from "discord.js";
 import pino, { Logger } from "pino";
 import { BaseArgument, EnqueueArgument, FlushArgument, SkipArgument, TonelistConfig, TonelistErrors } from "./types";
-import getVoiceChannel from "./helpers/getVoiceChannel";
+import getVoiceChannel from "./voice/getVoiceChannel";
 import { Jukebox } from "./jukebox";
 import initDB from "./db";
 import QueueModel from "./db/queue";
+import initCommands from "./commands/initCommand";
 
 export class Tonelist {
 	logger!: Logger;
@@ -33,6 +34,14 @@ export class Tonelist {
 		this.client.on('ready', async (client) => {
 			this.logger.info(`Logged in as ${client.user?.tag}!`);
 
+			await initCommands({
+				token: config.token,
+				clientId: config.clientId,
+				useTestGuilds: config.useTestGuilds,
+				testGuilds: config.testGuilds,
+				tonelist: this,
+			})
+
 			// restore jukeboxes
 			const queues = await QueueModel.find();
 			for (const queue of queues) {
@@ -55,7 +64,7 @@ export class Tonelist {
 			}
 		});
 
-		await initDB(config);
+		await initDB(config)
 
 		this.logger.info('Logging in to discord...');
 		await this.client.login(config.token);

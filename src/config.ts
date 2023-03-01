@@ -1,10 +1,18 @@
 import { OptionValues } from "commander";
-import { TonelistConfig } from "./types";
+
+type Config = {
+	token: string;
+	logLevel: string;
+	mongoUri: string;
+	clientId: string;
+	[key: string]: string | boolean | number;
+}
 
 const REQUIRED_OPTIONS = [
 	'token',
 	'logLevel',
-	'mongoUri'
+	'mongoUri',
+	'clientId'
 ]
 
 const OPTIONS = [
@@ -14,7 +22,8 @@ const OPTIONS = [
 const OPTION_TYPES: Record<string, string> = {
 	token: 'string',
 	logLevel: 'string',
-	mongoUri: 'string'
+	mongoUri: 'string',
+	clientId: 'string'
 }
 
 function toCaps(str: string) {
@@ -63,7 +72,7 @@ function getEnvVariables() {
 	return envVars;
 }
 
-function getConfig(options: OptionValues): TonelistConfig {
+function getConfig(options: OptionValues): Config {
 	const envVars = getEnvVariables();
 
 	const config = {
@@ -73,7 +82,7 @@ function getConfig(options: OptionValues): TonelistConfig {
 
 	validateConfig(config);
 
-	return config as TonelistConfig;
+	return config as Config;
 }
 
 export default getConfig;

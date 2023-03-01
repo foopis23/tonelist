@@ -30,6 +30,7 @@ function getMemberVoiceChannel(interaction: CommandInteraction) {
 const Enqueue: CommandConfig = {
 	data: data,
 	execute: async (interaction, { tonelist }) => {
+		// TODO: figure out how to type this properly
 		const songURI = (interaction.options as any).getString('song');
 		
 		if (!songURI || typeof songURI !== 'string') {

@@ -1,4 +1,4 @@
-import { Channel, CommandInteraction, Interaction, SlashCommandBuilder } from "discord.js";
+import { Channel, CommandInteraction, SlashCommandBuilder } from "discord.js";
 import { Tonelist } from "./tonelist";
 
 export type TonelistConfig = {

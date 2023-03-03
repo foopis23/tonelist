@@ -14,8 +14,9 @@ type JukeboxArguments = {
 }
 
 export class Jukebox extends EventEmitter {
-	connection: VoiceConnection;
-	player: AudioPlayer;
+	channel: VoiceChannel;
+	connection!: VoiceConnection;
+	player!: AudioPlayer;
 	leaveChannelTimeoutTime: number;
 
 	private leaveChannelTimeout: NodeJS.Timeout | null = null;
@@ -28,16 +29,23 @@ export class Jukebox extends EventEmitter {
 
 		this.logger = tonelist.logger.child({ name: 'Jukebox', guildID: channel.guild.id, channelID: channel.id })
 		this.leaveChannelTimeoutTime = args.leaveChannelTimeoutTime || 1000 * 60 * 5;
+		this.channel = channel;
 
+		this.initVoiceConnection();
+	}
+
+	private initVoiceConnection() {
 		this.connection = joinVoiceChannel({
-			channelId: channel.id,
-			guildId: channel.guild.id,
-			adapterCreator: channel.guild.voiceAdapterCreator,
+			channelId: this.channel.id,
+			guildId: this.channel.guild.id,
+			adapterCreator: this.channel.guild.voiceAdapterCreator,
 		});
 		this.player = createAudioPlayer();
 		this.connection.subscribe(this.player);
 
 		this.connection.on(VoiceConnectionStatus.Disconnected, this.onConnectionDisconnect.bind(this));
+		this.connection.on(VoiceConnectionStatus.Signalling, this.onConnectionSignalling.bind(this));
+		this.connection.on(VoiceConnectionStatus.Connecting, this.onConnectionConnecting.bind(this));
 		this.connection.on('error', this.onConnectionError.bind(this));
 
 		this.player.on(AudioPlayerStatus.Idle, this.onPlayerIdle.bind(this));
@@ -152,10 +160,10 @@ export class Jukebox extends EventEmitter {
 		}
 
 		this.logger.info('No more songs in queue');
-		this.leaveChannelTimeout = setTimeout(() => this.destroy(true), this.leaveChannelTimeoutTime);
+		this.leaveChannelTimeout = setTimeout(() => this.destroy({ clearQueue: true, exit: true }), this.leaveChannelTimeoutTime);
 	}
 
-	private async destroy(clearQueue = false) {
+	private async destroy({ clearQueue = false, exit = true }: { clearQueue?: boolean, exit?: boolean } = {}) {
 		if (clearQueue) {
 			await QueueModel.deleteOne({ id: this.connection.joinConfig.guildId });
 		}
@@ -166,8 +174,17 @@ export class Jukebox extends EventEmitter {
 		this.player.removeAllListeners();
 		this.connection.removeAllListeners();
 
-		this.emit('exit');
+		if (exit) {
+			this.emit('exit');
+		}
+
 		this.leaveChannelTimeout = null;
+	}
+
+	private async resetConnection() {
+		this.logger.info('Resetting connection');
+		await this.destroy({ clearQueue: false, exit: false });
+		this.initVoiceConnection();
 	}
 
 	private async playSong(songURI: string) {
@@ -218,14 +235,33 @@ export class Jukebox extends EventEmitter {
 	}
 
 	private async onConnectionDisconnect() {
+		this.logger.info('Connection disconnected, trying to reconnect');
 		try {
 			await Promise.race([
-				entersState(this.connection, VoiceConnectionStatus.Signalling, 5_000),
-				entersState(this.connection, VoiceConnectionStatus.Connecting, 5_000),
+				entersState(this.connection, VoiceConnectionStatus.Signalling, 5000),
+				entersState(this.connection, VoiceConnectionStatus.Connecting, 5000),
 			]);
 		} catch (error) {
 			this.logger.error(error);
 			this.destroy();
+		}
+	}
+
+	private async onConnectionSignalling() {
+		try {
+			await entersState(this.connection, VoiceConnectionStatus.Ready, 5000);
+		} catch (error) {
+			this.logger.error(error);
+			this.resetConnection();
+		}
+	}
+
+	private async onConnectionConnecting() {
+		try {
+			await entersState(this.connection, VoiceConnectionStatus.Ready, 5000);
+		} catch (error) {
+			this.logger.error(error);
+			this.resetConnection();
 		}
 	}
 }

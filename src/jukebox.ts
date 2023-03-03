@@ -167,23 +167,19 @@ export class Jukebox extends EventEmitter {
 			await QueueModel.deleteOne({ id: this.connection.joinConfig.guildId });
 		}
 
-		this.player.stop();
-		this.connection.destroy();
+		if (this.connection.state.status !== VoiceConnectionStatus.Destroyed) {
+			this.player.stop();
+			this.connection.destroy();
 
-		this.player.removeAllListeners();
-		this.connection.removeAllListeners();
+			this.player.removeAllListeners();
+			this.connection.removeAllListeners();
+		}
 
 		if (exit) {
 			this.emit('exit');
 		}
 
 		this.leaveChannelTimeout = null;
-	}
-
-	private async resetConnection() {
-		this.logger.info('Resetting connection');
-		await this.destroy({ clearQueue: false, exit: false });
-		this.initVoiceConnection();
 	}
 
 	private async playSong(songURI: string) {
@@ -251,7 +247,7 @@ export class Jukebox extends EventEmitter {
 			await entersState(this.connection, VoiceConnectionStatus.Ready, 5000);
 		} catch (error) {
 			this.logger.error(error);
-			this.resetConnection();
+			this.destroy();
 		}
 	}
 }

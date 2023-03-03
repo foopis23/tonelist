@@ -1,4 +1,4 @@
-import { AudioPlayer, AudioPlayerError, AudioPlayerStatus, createAudioPlayer, joinVoiceChannel, VoiceConnection } from "@discordjs/voice";
+import { AudioPlayer, AudioPlayerError, AudioPlayerStatus, createAudioPlayer, entersState, joinVoiceChannel, VoiceConnection, VoiceConnectionStatus } from "@discordjs/voice";
 import { VoiceChannel } from "discord.js";
 import { Logger } from "pino";
 import convertURIToAudioResource from "./voice/getAudioResourceFromURI";
@@ -37,6 +37,7 @@ export class Jukebox extends EventEmitter {
 		this.player = createAudioPlayer();
 		this.connection.subscribe(this.player);
 
+		this.connection.on(VoiceConnectionStatus.Disconnected, this.onConnectionDisconnect.bind(this));
 		this.connection.on('error', this.onConnectionError.bind(this));
 
 		this.player.on(AudioPlayerStatus.Idle, this.onPlayerIdle.bind(this));
@@ -151,18 +152,22 @@ export class Jukebox extends EventEmitter {
 		}
 
 		this.logger.info('No more songs in queue');
-		this.leaveChannelTimeout = setTimeout(() => {
-			QueueModel.deleteOne({ id: this.connection.joinConfig.guildId });
+		this.leaveChannelTimeout = setTimeout(() => this.destroy(true), this.leaveChannelTimeoutTime);
+	}
 
-			this.player.stop();
-			this.connection.destroy();
+	private async destroy(clearQueue = false) {
+		if (clearQueue) {
+			await QueueModel.deleteOne({ id: this.connection.joinConfig.guildId });
+		}
 
-			this.player.removeAllListeners();
-			this.connection.removeAllListeners();
+		this.player.stop();
+		this.connection.destroy();
 
-			this.emit('exit');
-			this.leaveChannelTimeout = null;
-		}, this.leaveChannelTimeoutTime);
+		this.player.removeAllListeners();
+		this.connection.removeAllListeners();
+
+		this.emit('exit');
+		this.leaveChannelTimeout = null;
 	}
 
 	private async playSong(songURI: string) {
@@ -210,5 +215,17 @@ export class Jukebox extends EventEmitter {
 
 	private onConnectionError() {
 		this.logger.info('Connection error');
+	}
+
+	private async onConnectionDisconnect() {
+		try {
+			await Promise.race([
+				entersState(this.connection, VoiceConnectionStatus.Signalling, 5_000),
+				entersState(this.connection, VoiceConnectionStatus.Connecting, 5_000),
+			]);
+		} catch (error) {
+			this.logger.error(error);
+			this.destroy();
+		}
 	}
 }

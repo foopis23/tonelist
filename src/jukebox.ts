@@ -44,7 +44,6 @@ export class Jukebox extends EventEmitter {
 		this.connection.subscribe(this.player);
 
 		this.connection.on(VoiceConnectionStatus.Disconnected, this.onConnectionDisconnect.bind(this));
-		this.connection.on(VoiceConnectionStatus.Signalling, this.onConnectionSignalling.bind(this));
 		this.connection.on(VoiceConnectionStatus.Connecting, this.onConnectionConnecting.bind(this));
 		this.connection.on('error', this.onConnectionError.bind(this));
 
@@ -244,15 +243,6 @@ export class Jukebox extends EventEmitter {
 		} catch (error) {
 			this.logger.error(error);
 			this.destroy();
-		}
-	}
-
-	private async onConnectionSignalling() {
-		try {
-			await entersState(this.connection, VoiceConnectionStatus.Ready, 5000);
-		} catch (error) {
-			this.logger.error(error);
-			this.resetConnection();
 		}
 	}
 

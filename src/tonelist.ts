@@ -42,8 +42,11 @@ export class Tonelist {
 				tonelist: this,
 			})
 
-			// restore jukeboxes
-			const queues = await QueueModel.find();
+			// restore unfinished queues
+			const queues = await QueueModel.find({
+				$where: "this.queuePosition < this.queue.length"
+			});
+
 			for (const queue of queues) {
 				if (queue.queue.length > 0) {
 					try {

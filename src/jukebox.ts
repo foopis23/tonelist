@@ -66,11 +66,9 @@ export class Jukebox extends EventEmitter {
 		this.logger.info('Playing next song');
 		const queue = await this.findOrCreateQueue();
 
-		if (queue.queuePosition + 1 >= queue.queue.length) {
-			if (queue.queuePosition + 1 > queue.queue.length) {
-				throw new Error(TonelistErrors.QueuePositionOutOfBounds);
-			}
-
+		if (queue.queuePosition + 1 > queue.queue.length) {
+			throw new Error(TonelistErrors.QueuePositionOutOfBounds);
+		} else if (queue.queuePosition + 1 == queue.queue.length) {
 			queue.queuePosition++;
 			await queue.save();
 
@@ -84,6 +82,8 @@ export class Jukebox extends EventEmitter {
 
 			this.logger.info('No more songs in queue');
 			this.leaveChannelTimeout = setTimeout(() => {
+				QueueModel.deleteOne({ id: this.connection.joinConfig.guildId });
+
 				this.player.stop();
 				this.connection.destroy();
 
@@ -187,8 +187,15 @@ export class Jukebox extends EventEmitter {
 
 	private onPlayerIdle() {
 		this.logger.info('Player idle');
+
 		if (!this.fetchingAudioResource) {
-			this.next();
+			this.next().catch((error) => {
+				if ((error as Error).message === TonelistErrors.QueuePositionOutOfBounds) {
+					// ignore
+				} else {
+					throw error;
+				}
+			});
 		}
 	}
 

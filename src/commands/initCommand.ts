@@ -7,6 +7,7 @@ import { CommandConfig } from '../types';
 import Enqueue from './enqueue';
 import List from './list';
 import Skip from './skip';
+import Previous from './previous';
 
 type InitCommandOptions = {
 	token: string;
@@ -20,7 +21,8 @@ const commands: CommandConfig[] = [
 	// Ping,
 	Enqueue,
 	List,
-	Skip
+	Skip,
+	Previous
 ]
 
 async function initCommands(options: InitCommandOptions) {

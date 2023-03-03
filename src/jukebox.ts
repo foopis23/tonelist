@@ -58,7 +58,7 @@ export class Jukebox extends EventEmitter {
 		await queue.save();
 
 		if (this.player.state.status === AudioPlayerStatus.Idle && !this.fetchingAudioResource) {
-			await this.next();
+			await this.playSong(queue.queue[queue.queuePosition]);
 		}
 	}
 
@@ -141,7 +141,7 @@ export class Jukebox extends EventEmitter {
 		this.logger.info('Flushing queue');
 		await QueueModel.updateOne(
 			{ id: this.connection.joinConfig.guildId },
-			{ queue: [], queuePosition: -1 }
+			{ queue: [], queuePosition: 0 }
 		);
 
 		this.player.stop();
@@ -157,7 +157,7 @@ export class Jukebox extends EventEmitter {
 
 		return {
 			songs: queue?.queue || [],
-			pointer: queue?.queuePosition || -1,
+			pointer: queue?.queuePosition || 0,
 		}
 	}
 
@@ -180,7 +180,7 @@ export class Jukebox extends EventEmitter {
 		return await QueueModel.create({
 			_id: this.connection.joinConfig.guildId,
 			queue: [],
-			queuePosition: -1,
+			queuePosition: 0,
 			channelID: this.connection.joinConfig.channelId,
 		})
 	}

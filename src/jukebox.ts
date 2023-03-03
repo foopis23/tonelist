@@ -76,23 +76,7 @@ export class Jukebox extends EventEmitter {
 				this.player.stop();
 			}
 
-			if (this.leaveChannelTimeout) {
-				return false;
-			}
-
-			this.logger.info('No more songs in queue');
-			this.leaveChannelTimeout = setTimeout(() => {
-				QueueModel.deleteOne({ id: this.connection.joinConfig.guildId });
-
-				this.player.stop();
-				this.connection.destroy();
-
-				this.player.removeAllListeners();
-				this.connection.removeAllListeners();
-
-				this.emit('exit');
-				this.leaveChannelTimeout = null;
-			}, this.leaveChannelTimeoutTime);
+			this.initDestroyTimeout();
 
 			return false;
 		}
@@ -159,6 +143,26 @@ export class Jukebox extends EventEmitter {
 			songs: queue?.queue || [],
 			pointer: queue?.queuePosition || 0,
 		}
+	}
+
+	private initDestroyTimeout() {
+		if (this.leaveChannelTimeout !== null) {
+			return;
+		}
+
+		this.logger.info('No more songs in queue');
+		this.leaveChannelTimeout = setTimeout(() => {
+			QueueModel.deleteOne({ id: this.connection.joinConfig.guildId });
+
+			this.player.stop();
+			this.connection.destroy();
+
+			this.player.removeAllListeners();
+			this.connection.removeAllListeners();
+
+			this.emit('exit');
+			this.leaveChannelTimeout = null;
+		}, this.leaveChannelTimeoutTime);
 	}
 
 	private async playSong(songURI: string) {

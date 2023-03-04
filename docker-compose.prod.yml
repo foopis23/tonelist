@@ -3,7 +3,7 @@ version: '3'
 services:
   tonelist:
     build:
-      dockerfile: ./dockerfile
+      dockerfile: .
     env_file:
       - .env
       - .env.production

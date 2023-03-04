@@ -154,6 +154,32 @@ export class Jukebox extends EventEmitter {
 		}
 	}
 
+	public async remove(index: number) {
+		this.logger.info(`Removing song at index ${index}`);
+		const queue = await this.findOrCreateQueue();
+
+		if (index < 1 || index > queue.queue.length) {
+			throw new Error(TonelistErrors.QueuePositionOutOfBounds);
+		}
+
+		index--;
+		queue.queue.splice(index, 1);
+
+		if (index === queue.queuePosition) {
+			if (this.player.state.status === AudioPlayerStatus.Playing) {
+				this.player.stop();
+			}
+
+			if (queue.queuePosition < queue.queue.length) {
+				await this.playSong(queue.queue[queue.queuePosition]);
+			}
+		} else if (index < queue.queuePosition) {
+			queue.queuePosition--;
+		}
+
+		await queue.save();
+	}
+
 	private initDestroyTimeout() {
 		if (this.leaveChannelTimeout !== null) {
 			return;

@@ -1,6 +1,6 @@
 import { Client, GatewayIntentBits, VoiceChannel } from "discord.js";
 import pino, { Logger } from "pino";
-import { BaseArgument, EnqueueArgument, FlushArgument, SkipArgument, TonelistConfig, TonelistErrors } from "./types";
+import { BaseArgument, EnqueueArgument, FlushArgument, RemoveArgument, SkipArgument, TonelistConfig, TonelistErrors } from "./types";
 import getVoiceChannel from "./voice/getVoiceChannel";
 import { Jukebox } from "./jukebox";
 import initDB from "./db";
@@ -104,6 +104,11 @@ export class Tonelist {
 	public async flush(argument: FlushArgument) {
 		const jukebox = await this.getJukebox(argument);
 		return await jukebox.flush();
+	}
+
+	public async remove(argument: RemoveArgument) {
+		const jukebox = await this.getJukebox(argument);
+		return await jukebox.remove(argument.position);
 	}
 
 	public async getQueue(argument: BaseArgument) {

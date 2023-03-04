@@ -9,6 +9,7 @@ import List from './list';
 import Skip from './skip';
 import Previous from './previous';
 import Flush from './flush';
+import Remove from './remove';
 
 type InitCommandOptions = {
 	token: string;
@@ -24,7 +25,8 @@ const commands: CommandConfig[] = [
 	List,
 	Skip,
 	Previous,
-	Flush
+	Flush,
+	Remove
 ]
 
 async function initCommands(options: InitCommandOptions) {

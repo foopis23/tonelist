@@ -18,6 +18,10 @@ export type EnqueueArgument = BaseArgument & {
 	songURI: string
 }
 
+export type RemoveArgument = BaseArgument & {
+	position: number
+}
+
 export type SkipArgument = BaseArgument;
 export type PreviousArgument = BaseArgument;
 export type FlushArgument = BaseArgument;

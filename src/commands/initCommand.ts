@@ -8,6 +8,7 @@ import Enqueue from './enqueue';
 import List from './list';
 import Skip from './skip';
 import Previous from './previous';
+import Flush from './flush';
 
 type InitCommandOptions = {
 	token: string;
@@ -22,7 +23,8 @@ const commands: CommandConfig[] = [
 	Enqueue,
 	List,
 	Skip,
-	Previous
+	Previous,
+	Flush
 ]
 
 async function initCommands(options: InitCommandOptions) {

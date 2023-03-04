@@ -131,10 +131,11 @@ export class Jukebox extends EventEmitter {
 
 	public async flush() {
 		this.logger.info('Flushing queue');
-		await QueueModel.updateOne(
-			{ id: this.connection.joinConfig.guildId },
-			{ queue: [], queuePosition: 0 }
-		);
+
+		const queue = await this.findOrCreateQueue();
+		queue.queue = [];
+		queue.queuePosition = 0;
+		await queue.save();
 
 		this.player.stop();
 	}

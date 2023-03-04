@@ -4,7 +4,8 @@ services:
 
   tonelist:
     build:
-      dockerfile: .
+      context: .
+      dockerfile: Dockerfile
     env_file:
       - .env
       - .env.development

@@ -21,4 +21,4 @@ COPY package*.json  ./
 RUN npm install --production
 COPY --from=builder /home/node/app/dist ./dist
 
-CMD ["node", "dist/server.js"]
+CMD ["node", "dist/index.js"]

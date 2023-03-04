@@ -1,10 +1,10 @@
 import { AudioPlayer, AudioPlayerError, AudioPlayerStatus, createAudioPlayer, entersState, joinVoiceChannel, VoiceConnection, VoiceConnectionStatus } from "@discordjs/voice";
 import { VoiceChannel } from "discord.js";
 import { Logger } from "pino";
-import convertURIToAudioResource from "./voice/getAudioResourceFromURI";
 import { Tonelist } from "./tonelist";
 import { EventEmitter } from "events";
 import { TonelistErrors } from "./types";
+import getAudioResourceFromURI from "./voice/getAudioResourceFromURI";
 import QueueModel from "./db/queue";
 
 type JukeboxArguments = {
@@ -213,7 +213,7 @@ export class Jukebox extends EventEmitter {
 		this.logger.info(`Playing ${songURI}`);
 
 		this.fetchingAudioResource = true;
-		const audioResource = await convertURIToAudioResource(songURI);
+		const audioResource = await getAudioResourceFromURI(songURI);
 		this.fetchingAudioResource = false;
 		this.player.play(audioResource);
 	}

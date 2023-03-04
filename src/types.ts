@@ -1,5 +1,6 @@
 import { Channel, CommandInteraction, SlashCommandBuilder } from "discord.js";
 import { Tonelist } from "./tonelist";
+import { AudioResource } from "@discordjs/voice";
 
 export type TonelistConfig = {
 	logLevel: string;
@@ -46,4 +47,9 @@ export type CommandExecuteAction = (interaction: CommandInteraction, context: Co
 export type CommandConfig = {
 	data: SlashCommandBuilder,
 	execute: CommandExecuteAction
+}
+
+export type AudioProvider = {
+	getAudioResourceFromURI: (songURI: string) => Promise<AudioResource> | AudioResource,
+	isValidURI: (songURI: string) => boolean | Promise<boolean>
 }

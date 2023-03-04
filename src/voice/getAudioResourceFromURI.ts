@@ -1,17 +1,18 @@
-import { TonelistErrors } from "../types";
-import { createAudioResource } from "@discordjs/voice";
-import fs from 'fs';
+import { AudioProvider } from '../types'
+import Youtube from './providers/youtube'
 
-async function convertURIToAudioResource(songURI: string) {
-	// validate song uri is file path
-	// create audio resource
-	try {
-		await fs.promises.access(songURI, fs.constants.R_OK)
-	} catch (err) {
-		throw new Error(TonelistErrors.InvalidSongURI);
+const providers : AudioProvider[] = [
+	Youtube
+]
+
+function getAudioResourceFromURI(songURI: string) {
+	for (const provider of providers) {
+		if (provider.isValidURI(songURI)) {
+			return provider.getAudioResourceFromURI(songURI);
+		}
 	}
 
-	return createAudioResource(fs.createReadStream(songURI));
+	throw new Error('Invalid song URI');
 }
 
-export default convertURIToAudioResource;
+export default getAudioResourceFromURI;

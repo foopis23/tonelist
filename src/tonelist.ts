@@ -6,11 +6,14 @@ import { Jukebox } from "./jukebox";
 import initDB from "./db";
 import QueueModel from "./db/queue";
 import initCommands from "./commands/initCommand";
+import { Node } from "lavaclient";
+import initLavaClient from "./voice/initLavaClient";
 
 export class Tonelist {
 	logger!: Logger;
 	client!: Client;
 	guildJukeboxes: Map<string, Jukebox>;
+	lavaClient!: Node;
 
 	constructor() {
 		this.guildJukeboxes = new Map();
@@ -69,6 +72,16 @@ export class Tonelist {
 
 		await initDB(config)
 
+		this.lavaClient = initLavaClient(this.client, {
+			nodeOptions: {
+				connection: {
+					host: config.lavaHost,
+					port: config.lavaPort,
+					password: config.lavaPassword,
+				}
+			}
+		});
+
 		this.logger.info('Logging in to discord...');
 		await this.client.login(config.token);
 	}
@@ -124,7 +137,7 @@ export class Tonelist {
 		this.logger.debug({ channel: channel.id, guild: channel.guild.id, jukeboxes: Array.from(this.guildJukeboxes.keys()) }, 'getJukebox');
 
 		if (!this.guildJukeboxes.has(channel.guild.id)) {
-			
+
 			throw new Error(TonelistErrors.BotNotInVoiceChannel);
 		}
 

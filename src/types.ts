@@ -9,6 +9,9 @@ export type TonelistConfig = {
 	useTestGuilds?: boolean;
 	testGuilds?: string[];
 	clientId: string;
+	lavaHost: string;
+	lavaPort: number;
+	lavaPassword: string;
 }
 
 export type BaseArgument = {

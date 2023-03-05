@@ -5,6 +5,9 @@ type Config = {
 	logLevel: string;
 	mongoUri: string;
 	clientId: string;
+	lavaHost: string;
+	lavaPort: number;
+	lavaPassword: string;
 	[key: string]: string | boolean | number;
 }
 
@@ -12,7 +15,10 @@ const REQUIRED_OPTIONS = [
 	'token',
 	'logLevel',
 	'mongoUri',
-	'clientId'
+	'clientId',
+	'lavaHost',
+	'lavaPort',
+	'lavaPassword'
 ]
 
 const OPTIONS = [
@@ -23,7 +29,10 @@ const OPTION_TYPES: Record<string, string> = {
 	token: 'string',
 	logLevel: 'string',
 	mongoUri: 'string',
-	clientId: 'string'
+	clientId: 'string',
+	lavaHost: 'string',
+	lavaPort: 'number',
+	lavaPassword: 'string',
 }
 
 function toCaps(str: string) {

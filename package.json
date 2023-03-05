@@ -28,6 +28,7 @@
     "discord.js": "^14.7.1",
     "dotenv": "^16.0.3",
     "fastify": "^4.13.0",
+    "lavaclient": "^4.1.1",
     "libsodium-wrappers": "^0.7.11",
     "mongoose": "^7.0.0",
     "pino": "^8.11.0",

@@ -54,10 +54,8 @@ class BaseTonelist {
 
 export class Tonelist extends BaseTonelist {
 	async init(options: InitOptions) {
-		console.log(options)
 		await super.init(options);
 
-		this.logger.info('Tonelist is ready!');
 		const results = await this.node.rest.loadTracks('ytsearch: tatsuro yamashita for you')
 
 		await this.node

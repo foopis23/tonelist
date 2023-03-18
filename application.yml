@@ -3,6 +3,7 @@ server: # REST and WS server
   address: 0.0.0.0
 lavalink:
   server:
+    password: "youshallnotpass"
     sources:
       youtube: true
       bandcamp: true
@@ -48,3 +49,36 @@ lavalink:
       #proxyUser: "" # Optional user for basic authentication fields, leave blank if you don't use basic auth
       #proxyPassword: "" # Password for basic authentication
 
+metrics:
+  prometheus:
+    enabled: false
+    endpoint: /metrics
+
+sentry:
+  dsn: ""
+  environment: ""
+#  tags:
+#    some_key: some_value
+#    another_key: another_value
+
+logging:
+  file:
+    path: ./logs/
+
+  level:
+    root: INFO
+    lavalink: INFO
+
+  request:
+    enabled: true
+    includeClientInfo: true
+    includeHeaders: false
+    includeQueryString: true
+    includePayload: true
+    maxPayloadLength: 10000
+
+
+  logback:
+    rollingpolicy:
+      max-file-size: 1GB
+      max-history: 30

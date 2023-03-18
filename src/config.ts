@@ -2,19 +2,15 @@ import { OptionValues } from "commander";
 
 type Config = {
 	token: string;
-	logLevel: string;
-	mongoUri: string;
-	clientId: string;
 	lavaHost: string;
 	lavaPort: number;
 	lavaPassword: string;
-	[key: string]: string | boolean | number;
+	clientId: string;
+	logLevel?: string;
 }
 
 const REQUIRED_OPTIONS = [
 	'token',
-	'logLevel',
-	'mongoUri',
 	'clientId',
 	'lavaHost',
 	'lavaPort',
@@ -27,8 +23,6 @@ const OPTIONS = [
 
 const OPTION_TYPES: Record<string, string> = {
 	token: 'string',
-	logLevel: 'string',
-	mongoUri: 'string',
 	clientId: 'string',
 	lavaHost: 'string',
 	lavaPort: 'number',

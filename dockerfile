@@ -1,4 +1,4 @@
-FROM node:18.8-alpine as base
+FROM node:18.15-alpine as base
 
 RUN apk update
 RUN apk add

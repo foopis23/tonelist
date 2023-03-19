@@ -1,6 +1,8 @@
 import { ApplicationCommandOptionType, ChatInputCommandInteraction, GuildMember, Interaction } from "discord.js";
 import { Tonelist } from "../tonelist";
+import { TonelistErrorType } from "../types";
 import Enqueue from "./enqueue";
+import List from "./list";
 import Ping from "./ping";
 import { CommandArguments, CommandConfig, InitCommandOptions } from "./types";
 
@@ -70,7 +72,8 @@ function getCommandArguments(command: CommandConfig, interaction: Interaction): 
 async function initCommands(tonelist: Tonelist, options: InitCommandOptions) {
 	const commands: CommandConfig[] = [
 		Ping,
-		Enqueue
+		Enqueue,
+		List
 	];
 
 	await registerCommands(tonelist, options, commands);
@@ -92,11 +95,25 @@ async function initCommands(tonelist: Tonelist, options: InitCommandOptions) {
 			const textChannel = commandInteraction.channel;
 			await command.execute({ interaction: commandInteraction, tonelist, args, voiceChannel, textChannel });
 		} catch (e) {
-			console.error(e);
-			await interaction.reply({
-				content: 'There was an error while executing this command!',
-				ephemeral: true,
-			});
+			if (e.type) {
+				switch (e.type) {
+					case TonelistErrorType.ALREADY_CONNECTED:
+						await interaction.editReply('Already connected to a voice channel');
+						return;
+					case TonelistErrorType.NOT_CONNECTED:
+						await interaction.editReply('Not connected to a voice channel');
+						return;
+					case TonelistErrorType.INDEX_OUT_OF_BOUNDS:
+						await interaction.editReply('Index needs to be between 0 and the queue length');
+						return;
+				}
+			}
+
+			if (interaction.deferred || interaction.replied) {
+				await interaction.editReply('An error occurred: ' + e.message || 'Unknown error');
+			} else {
+				await interaction.reply('An error occurred: ' + e.message || 'Unknown error');
+			}
 		}
 	});
 }

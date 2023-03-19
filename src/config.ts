@@ -59,13 +59,6 @@ dotenv.config({
 	override: true
 })
 
-if (process.env.NODE_ENV) {
-	dotenv.config({
-		path: path.resolve(__dirname, `../.env.${process.env.NODE_ENV}.local`),
-		override: true
-	});
-}
-
 function toCaps(str: string) {
 	return str.replace(/([a-z0-9]|(?=[A-Z]))([A-Z])/g, '$1_$2').toUpperCase();
 }

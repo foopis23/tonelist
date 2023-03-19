@@ -9,7 +9,6 @@ services:
       - .env
       - .env.production
       - .env.local
-      - .env.production.local
     working_dir: /home/node/app/
     depends_on:
       - mongo

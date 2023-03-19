@@ -1,4 +1,4 @@
-import { ApplicationCommandOptionType, ChatInputCommandInteraction, Interaction } from "discord.js";
+import { ApplicationCommandOptionType, ChatInputCommandInteraction, GuildMember, Interaction } from "discord.js";
 import { Tonelist } from "../tonelist";
 import Enqueue from "./enqueue";
 import Ping from "./ping";
@@ -86,8 +86,11 @@ async function initCommands(tonelist: Tonelist, options: InitCommandOptions) {
 		}
 
 		try {
-			const options = getCommandArguments(command, interaction);
-			await command.execute(interaction as ChatInputCommandInteraction, options);
+			const commandInteraction = interaction as ChatInputCommandInteraction;
+			const args = getCommandArguments(command, interaction);
+			const voiceChannel = (commandInteraction.member as GuildMember)?.voice?.channel;
+			const textChannel = commandInteraction.channel;
+			await command.execute({ interaction: commandInteraction, tonelist, args, voiceChannel, textChannel });
 		} catch (e) {
 			console.error(e);
 			await interaction.reply({

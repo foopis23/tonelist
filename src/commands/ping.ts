@@ -7,7 +7,7 @@ const Ping: CommandConfig = {
 		.setDescription('Replies with Pong!')
 		.addStringOption(option => option.setName('input').setDescription('The input to echo back')),
 
-	execute: async (interaction, args) => {
+	execute: async ({ interaction, args }) => {
 		console.log(args);
 		await interaction.reply(`Pong! ${args.input}`);
 	}

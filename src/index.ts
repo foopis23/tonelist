@@ -38,14 +38,5 @@ if (config.testGuilds) {
 }
 
 tonelist.init(initOptions, async () => {
-	await tonelist.join({
-		guildId: '637502626120073218',
-		voiceChannelId: '711959134626644018'
-	})
-
-	await tonelist.enqueue({
-		guildId: '637502626120073218',
-		voiceChannelId: '711959134626644018',
-		query: 'ytsearch:tatsuro yamashita - for you'
-	})
+	tonelist.logger.info('Tonelist is ready!');
 });

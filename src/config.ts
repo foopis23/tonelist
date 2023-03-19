@@ -1,20 +1,19 @@
 import { OptionValues } from "commander";
+import path from 'path';
+import dotenv from 'dotenv';
 
 type Config = {
 	token: string;
-	logLevel: string;
-	mongoUri: string;
-	clientId: string;
 	lavaHost: string;
 	lavaPort: number;
 	lavaPassword: string;
-	[key: string]: string | boolean | number;
+	clientId: string;
+	testGuilds?: string;
+	logLevel?: string;
 }
 
 const REQUIRED_OPTIONS = [
 	'token',
-	'logLevel',
-	'mongoUri',
 	'clientId',
 	'lavaHost',
 	'lavaPort',
@@ -27,12 +26,44 @@ const OPTIONS = [
 
 const OPTION_TYPES: Record<string, string> = {
 	token: 'string',
-	logLevel: 'string',
-	mongoUri: 'string',
 	clientId: 'string',
 	lavaHost: 'string',
 	lavaPort: 'number',
 	lavaPassword: 'string',
+	testGuilds: 'string',
+}
+
+/*
+* Load environment variables from .env files
+* The order of loading is as follows:
+* 1. .env
+* 2. .env.{NODE_ENV}
+* 3. .env.local
+* 4. .env.{NODE_ENV}.local
+*/
+
+dotenv.config({
+	path: path.resolve(__dirname, '../.env'),
+	override: true
+});
+
+if (process.env.NODE_ENV) {
+	dotenv.config({
+		path: path.resolve(__dirname, `../.env.${process.env.NODE_ENV}`),
+		override: true
+	});
+}
+
+dotenv.config({
+	path: path.resolve(__dirname, '../.env.local'),
+	override: true
+})
+
+if (process.env.NODE_ENV) {
+	dotenv.config({
+		path: path.resolve(__dirname, `../.env.${process.env.NODE_ENV}.local`),
+		override: true
+	});
 }
 
 function toCaps(str: string) {

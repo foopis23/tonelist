@@ -1,179 +1,219 @@
-import { Client, GatewayIntentBits, VoiceChannel } from "discord.js";
+import { Client, GatewayDispatchEvents, GatewayIntentBits } from "discord.js";
 import pino, { Logger } from "pino";
-import { BaseArgument, EnqueueArgument, FlushArgument, RemoveArgument, SkipArgument, TonelistConfig, TonelistErrors } from "./types";
-import getVoiceChannel from "./voice/getVoiceChannel";
-import { Jukebox } from "./jukebox";
-import initDB from "./db";
-import QueueModel from "./db/queue";
-import initCommands from "./commands/initCommand";
 import { Node } from "lavaclient";
-import initLavaClient from "./voice/initLavaClient";
+import { EnqueueArguments, InitOptions, JoinArguments, LeaveArguments, Queue, QueueArguments, RemoveArguments, TonelistError, TonelistErrorType } from "./types";
+import { Store, StoreErrorType } from "./store/types";
+import InMemoryStore from "./store/in-memory-store";
+import initCommands from "./commands/init";
 
-export class Tonelist {
-	logger!: Logger;
-	client!: Client;
-	guildJukeboxes: Map<string, Jukebox>;
-	lavaClient!: Node;
+class BaseTonelist {
+	logger: Logger;
+	client: Client;
+	node: Node;
+	queues: Store<Queue>
 
-	constructor() {
-		this.guildJukeboxes = new Map();
-	}
-
-	async init(config: TonelistConfig, callback?: (tonelist: Tonelist) => void) {
+	async init(options: InitOptions, ready?: (client: Client) => void) {
 		this.logger = pino({
 			name: 'Tonelist',
-			level: config.logLevel,
+			level: 'info',
+			...options.loggerOptions
 		});
-
-		this.logger.info('Staring Tonelist...');
 
 		this.client = new Client({
-			intents: [
+			...options.clientOptions ?? {},
+			intents: options.clientOptions?.intents ?? [
 				GatewayIntentBits.Guilds,
+				GatewayIntentBits.GuildMessages,
 				GatewayIntentBits.GuildVoiceStates
-			]
+			],
 		});
 
-		this.client.on('ready', async (client) => {
-			this.logger.info(`Logged in as ${client.user?.tag}!`);
+		this.node = new Node({
+			sendGatewayPayload: (id, payload) => this.client.guilds.cache.get(id)?.shard?.send(payload),
+			connection: options.lavaConnectionInfo,
+		});
+		this.client.ws.on(GatewayDispatchEvents.VoiceServerUpdate, data => this.node.handleVoiceUpdate(data));
+		this.client.ws.on(GatewayDispatchEvents.VoiceStateUpdate, data => this.node.handleVoiceUpdate(data));
 
-			await initCommands({
-				token: config.token,
-				clientId: config.clientId,
-				useTestGuilds: config.useTestGuilds,
-				testGuilds: config.testGuilds,
-				tonelist: this,
-			})
+		const onReady = (function (client: Client) {
+			client.removeListener('ready', onReady);
+			this.node.connect(client.user.id);
+			ready?.(client);
+		}).bind(this);
+		this.client.on('ready', onReady);
 
-			// restore unfinished queues
-			const queues = await QueueModel.find({
-				$where: "this.queuePosition < this.queue.length"
-			});
+		this.queues = new InMemoryStore();
 
-			for (const queue of queues) {
-				if (queue.queue.length > 0) {
-					try {
-						const channel = await getVoiceChannel(this.client, {
-							channel: queue.channelID
-						});
+		this.client.login(options.token);
+		return this;
+	}
 
-						const jukebox = await this.getOrCreateJukebox(channel);
-						await jukebox.resume();
-					} catch (error) {
-						this.logger.error(error);
-					}
-				}
+	async findOrCreateQueue(guildId: string) {
+		let queue: Queue;
+
+		try {
+			queue = await this.queues.get(guildId)
+		} catch (e) {
+			if (e.type === StoreErrorType.NOT_FOUND) {
+				// handles queue does not exist error
+				queue = {
+					tracks: []
+				};
+
+				await this.queues.set(guildId, queue);
+			} else {
+				throw e;
+			}
+		}
+
+		return queue;
+	}
+
+	async getGuild(guildId: string) {
+		const guild = this.client.guilds.cache.get(guildId);
+		if (!guild) {
+			const freshGuild = await this.client.guilds.fetch(guildId);
+			if (!freshGuild) {
+				throw new Error('Guild not found');
 			}
 
-			if (callback) {
-				callback(this);
+			return freshGuild;
+		}
+
+		return guild;
+	}
+
+	async getVoiceChannel(guildId: string, channelId: string) {
+		const guild = await this.getGuild(guildId);
+		const channel = guild.channels.cache.get(channelId);
+		if (!channel) {
+			const freshChannel = await guild.channels.fetch(channelId);
+			if (!freshChannel) {
+				throw new Error('Channel not found');
 			}
-		});
 
-		await initDB(config)
+			return freshChannel;
+		}
 
-		this.lavaClient = initLavaClient(this.client, {
-			nodeOptions: {
-				connection: {
-					host: config.lavaHost,
-					port: config.lavaPort,
-					password: config.lavaPassword,
-				}
+		return channel;
+	}
+
+	async join(args: JoinArguments) {
+		const { guildId, textChannelId, voiceChannelId } = args;
+
+		const player = this.node.createPlayer(guildId);
+
+		if (player.connected) {
+			throw new TonelistError('Already connected to a voice channel', TonelistErrorType.ALREADY_CONNECTED);
+		}
+
+		const queue = await this.findOrCreateQueue(guildId);
+
+		if (textChannelId) {
+			await this.queues.set(guildId, queue);
+		}
+
+		player.connect(voiceChannelId, { deafened: true });
+
+		return {
+			queue,
+			guildId,
+			textChannelId,
+			voiceChannelId
+		};
+	}
+
+	async leave(args: LeaveArguments) {
+		const { guildId } = args;
+
+		const player = this.node.players.get(guildId);
+
+		if (!player.connected) {
+			throw new TonelistError('Not connected to a voice channel', TonelistErrorType.NOT_CONNECTED);
+		}
+
+		const voiceChannel = await this.getVoiceChannel(guildId, player.channelId);
+
+		player.disconnect();
+		this.node.destroyPlayer(player.guildId);
+
+		return {
+			guildId,
+			voiceChannelId: voiceChannel.id
+		};
+	}
+
+	async enqueue(args: EnqueueArguments) {
+		const { guildId, voiceChannelId, query } = args;
+
+		let player = this.node.players.get(guildId);
+		const tracks = await this.node.rest.loadTracks(query);
+
+		if (!player?.connected) {
+			player ??= this.node.createPlayer(guildId);
+			player.connect(voiceChannelId, { deafened: true });
+		}
+
+		const queue = await this.findOrCreateQueue(guildId);
+		queue.tracks.push(...tracks.tracks);
+		await this.queues.set(guildId, queue);
+
+		const started = player.playing || player.paused;
+		if (!started) {
+			await player.play(queue.tracks[0].track);
+		}
+
+		return {
+			queue,
+			guildID: guildId,
+			voiceChannelId
+		}
+	}
+
+	async remove(args: RemoveArguments) {
+		const { guildId, index } = args;
+
+		const queue = await this.findOrCreateQueue(guildId);
+
+		if (index < 0 || index >= queue.tracks.length) {
+			queue.tracks.splice(index, 1);
+		} else {
+			throw new TonelistError('Index out of bounds', TonelistErrorType.INDEX_OUT_OF_BOUNDS);
+		}
+
+		await this.queues.set(guildId, queue);
+
+		return {
+			queue,
+			guildId
+		};
+	}
+
+	async queue(args: QueueArguments) {
+		const { guildId } = args;
+
+		return {
+			queue: await this.findOrCreateQueue(guildId),
+			guildId
+		};
+	}
+}
+
+export class Tonelist extends BaseTonelist {
+	async init(options: InitOptions, ready?: (client: Client) => void) {
+		await super.init(
+			options,
+			async () => {
+				await initCommands(this, {
+					...options?.commandOptions ?? {}
+				})
+				ready?.(this.client);
 			}
-		});
+		);
 
-		this.logger.info('Logging in to discord...');
-		await this.client.login(config.token);
-	}
-
-	public async enqueue(argument: EnqueueArgument) {
-		// get channel to enqueue in
-		const channel = await getVoiceChannel(this.client, {
-			channel: argument.channel,
-		});
-
-		// check if jukebox is jukebox needed to be created
-		const jukebox = await this.getOrCreateJukebox(channel);
-
-		// if jukebox is not playing to the requested channel, throw error
-		if (jukebox?.connection.joinConfig.channelId !== channel.id) {
-			throw new Error(TonelistErrors.JukeboxInUseInDifferentChannel);
-		}
-
-		// enqueue song
-		return await jukebox.enqueue(argument.songURI);
-	}
-
-	public async skip(argument: SkipArgument) {
-		const jukebox = await this.getJukebox(argument);
-		return await jukebox.next();
-	}
-
-	public async previous(argument: SkipArgument) {
-		const jukebox = await this.getJukebox(argument);
-		return await jukebox.previous();
-	}
-
-	public async flush(argument: FlushArgument) {
-		const jukebox = await this.getJukebox(argument);
-		return await jukebox.flush();
-	}
-
-	public async remove(argument: RemoveArgument) {
-		const jukebox = await this.getJukebox(argument);
-		return await jukebox.remove(argument.position);
-	}
-
-	public async getQueue(argument: BaseArgument) {
-		const jukebox = await this.getJukebox(argument);
-		return await jukebox.getQueue();
-	}
-
-	private async getJukebox(argument: BaseArgument) {
-		const channel = await getVoiceChannel(this.client, {
-			channel: argument.channel,
-		});
-
-		this.logger.debug({ channel: channel.id, guild: channel.guild.id, jukeboxes: Array.from(this.guildJukeboxes.keys()) }, 'getJukebox');
-
-		if (!this.guildJukeboxes.has(channel.guild.id)) {
-
-			throw new Error(TonelistErrors.BotNotInVoiceChannel);
-		}
-
-		const guildID = channel.guild.id;
-		const jukebox = this.guildJukeboxes.get(guildID) as Jukebox;
-
-		if (jukebox.connection.joinConfig.channelId !== channel.id) {
-			throw new Error(TonelistErrors.JukeboxInUseInDifferentChannel);
-		}
-
-		return jukebox;
-	}
-
-	private async getOrCreateJukebox(channel: VoiceChannel) {
-		const guildID = channel.guild.id;
-
-		if (!this.guildJukeboxes.has(guildID)) {
-			const jukebox = new Jukebox({
-				tonelist: this,
-				channel
-			});
-
-			this.guildJukeboxes.set(guildID, jukebox);
-
-			jukebox.on('exit', () => {
-				jukebox.removeAllListeners();
-				this.guildJukeboxes.delete(guildID);
-			})
-
-			return jukebox;
-		}
-
-		return this.guildJukeboxes.get(guildID) as Jukebox;
+		return this;
 	}
 }
 
 const tonelist = new Tonelist();
-
 export default tonelist;

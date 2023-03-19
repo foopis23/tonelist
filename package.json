@@ -1,21 +1,22 @@
 {
-  "name": "tonelist-simple",
+  "name": "tonelist",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {
-    "start": "NODE_ENV=production node dist/index.js",
-    "dev": "NODE_ENV=development nodemon --exec ts-node src/index.ts | pino-pretty -c -t",
+    "start": "cross-env NODE_ENV=production node dist/index.js",
+    "dev": "cross-env NODE_ENV=development nodemon -L --exec ts-node src/index.ts | pino-pretty -c -t",
     "lint": "eslint . --ext .ts src/",
     "lint:fix": "eslint . --ext .ts src/--fix",
     "build": "tsc"
   },
   "keywords": [],
-  "author": "",
+  "author": "Eric Sexton",
   "license": "ISC",
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^5.54.0",
     "@typescript-eslint/parser": "^5.54.0",
+    "cross-env": "^7.0.3",
     "eslint": "^8.35.0",
     "nodemon": "^2.0.20",
     "pino-pretty": "^9.4.0",
@@ -23,15 +24,11 @@
     "typescript": "^4.9.5"
   },
   "dependencies": {
-    "@discordjs/voice": "^0.14.0",
     "commander": "^10.0.0",
     "discord.js": "^14.7.1",
     "dotenv": "^16.0.3",
     "fastify": "^4.13.0",
     "lavaclient": "^4.1.1",
-    "libsodium-wrappers": "^0.7.11",
-    "mongoose": "^7.0.0",
-    "pino": "^8.11.0",
-    "ytdl-core": "^4.11.2"
+    "pino": "^8.11.0"
   }
 }

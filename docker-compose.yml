@@ -17,24 +17,14 @@ services:
     working_dir: /home/node/app/
     command: sh -c "npm install && npm run dev"
     depends_on:
-      - mongo
       - lavalink
     environment:
       NODE_ENV: development
   
-  mongo:
-    image: mongo:latest
-    ports:
-      - "27017:27017"
-    command:
-      - --storageEngine=wiredTiger
-    volumes:
-      - data:/data/db
-    logging:
-      driver: none
-  
   lavalink:
     image: fredboat/lavalink:latest
+    volumes:
+      - ./application.yml:/opt/Lavalink/application.yml
     ports:
       - "2333:2333"
     logging:

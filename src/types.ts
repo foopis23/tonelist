@@ -1,58 +1,56 @@
-import { Channel, CommandInteraction, SlashCommandBuilder } from "discord.js";
-import { Tonelist } from "./tonelist";
-import { AudioResource } from "@discordjs/voice";
+import { ClientOptions } from "discord.js";
+import { LoggerOptions } from "pino";
+import { ConnectionInfo } from "lavaclient";
+import { Track } from "@lavaclient/types/v3";
+import { InitCommandOptions } from "./commands/types";
 
-export type TonelistConfig = {
-	logLevel: string;
+export type InitOptions = {
+	loggerOptions?: LoggerOptions;
+	clientOptions?: Partial<ClientOptions>;
+	commandOptions?: Partial<InitCommandOptions>;
 	token: string;
-	mongoUri: string;
-	useTestGuilds?: boolean;
-	testGuilds?: string[];
 	clientId: string;
-	lavaHost: string;
-	lavaPort: number;
-	lavaPassword: string;
+	lavaConnectionInfo: ConnectionInfo;
 }
 
-export type BaseArgument = {
-	channel: Channel | string
+export type Queue = {
+	textChannel?: string;
+	tracks: Track[];
 }
 
-export type EnqueueArgument = BaseArgument & {
-	songURI: string
+export enum TonelistErrorType {
+	ALREADY_CONNECTED = 'Already connected to a voice channel',
+	NOT_CONNECTED = 'Not connected to a voice channel',
+	INDEX_OUT_OF_BOUNDS = 'Index out of bounds',
 }
 
-export type RemoveArgument = BaseArgument & {
-	position: number
+export class TonelistError extends Error {
+	constructor(message: string, public type: TonelistErrorType) {
+		super(message);
+	}
 }
 
-export type SkipArgument = BaseArgument;
-export type PreviousArgument = BaseArgument;
-export type FlushArgument = BaseArgument;
-
-export enum TonelistErrors {
-	InvalidChannel = 'Invalid channel',
-	InvalidChannelType = 'Channel is not a voice channel',
-	ChannelNotJoinable = 'Channel is not joinable',
-	InvalidSongURI = 'Invalid song URI',
-	JukeboxInUseInDifferentChannel = 'Tonelist is in use in a different channel',
-	BotNotInVoiceChannel = 'Tonelist is not in a voice channel',
-	NoPreviousSong = 'No previous song',
-	QueuePositionOutOfBounds = 'There are no more songs in the queue',
+export type JoinArguments = {
+	guildId: string;
+	textChannelId?: string;
+	voiceChannelId: string;
 }
 
-export type CommandContext = {
-	tonelist: Tonelist
-};
-
-export type CommandExecuteAction = (interaction: CommandInteraction, context: CommandContext) => Promise<void>;
-
-export type CommandConfig = {
-	data: SlashCommandBuilder,
-	execute: CommandExecuteAction
+export type LeaveArguments = {
+	guildId: string;
 }
 
-export type AudioProvider = {
-	getAudioResourceFromURI: (songURI: string) => Promise<AudioResource> | AudioResource,
-	isValidURI: (songURI: string) => boolean | Promise<boolean>
+export type EnqueueArguments = {
+	guildId: string;
+	voiceChannelId: string;
+	query: string;
+}
+
+export type RemoveArguments = {
+	guildId: string;
+	index: number;
+}
+
+export type QueueArguments = {
+	guildId: string;
 }

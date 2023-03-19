@@ -1,5 +1,6 @@
 import { ApplicationCommandOptionType, ChatInputCommandInteraction, Interaction } from "discord.js";
 import { Tonelist } from "../tonelist";
+import Enqueue from "./enqueue";
 import Ping from "./ping";
 import { CommandArguments, CommandConfig, InitCommandOptions } from "./types";
 
@@ -68,7 +69,8 @@ function getCommandArguments(command: CommandConfig, interaction: Interaction): 
 
 async function initCommands(tonelist: Tonelist, options: InitCommandOptions) {
 	const commands: CommandConfig[] = [
-		Ping
+		Ping,
+		Enqueue
 	];
 
 	await registerCommands(tonelist, options, commands);

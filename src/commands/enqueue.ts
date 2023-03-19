@@ -29,7 +29,7 @@ const Enqueue: CommandConfig = {
 			});
 
 			if (queue.tracks.length - lengthBefore > 1) {
-				await interaction.editReply(`Enqueued \`${queue.tracks[queue.tracks.length - 1].info.title}\` and ${queue.tracks.length - lengthBefore - 1} more`);
+				await interaction.editReply(`Enqueued \`${queue.tracks[lengthBefore].info.title}\` and ${queue.tracks.length - lengthBefore - 1} more`);
 				return;
 			}
 

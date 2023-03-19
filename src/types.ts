@@ -2,10 +2,12 @@ import { ClientOptions } from "discord.js";
 import { LoggerOptions } from "pino";
 import { ConnectionInfo } from "lavaclient";
 import { Track } from "@lavaclient/types/v3";
+import { InitCommandOptions } from "./commands/types";
 
 export type InitOptions = {
-	loggerOptions?: LoggerOptions,
-	clientOptions?: Partial<ClientOptions>,
+	loggerOptions?: LoggerOptions;
+	clientOptions?: Partial<ClientOptions>;
+	commandOptions?: Partial<InitCommandOptions>;
 	token: string;
 	clientId: string;
 	lavaConnectionInfo: ConnectionInfo;

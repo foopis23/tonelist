@@ -66,6 +66,12 @@ if (config.logLevel) {
 	};
 }
 
+if (config.testGuilds) {
+	initOptions.commandOptions = {
+		testGuilds: config.testGuilds.split(',')
+	};
+}
+
 tonelist.init(initOptions, async () => {
 	await tonelist.join({
 		guildId: '637502626120073218',

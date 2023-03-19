@@ -4,6 +4,7 @@ import { Node } from "lavaclient";
 import { EnqueueArguments, InitOptions, JoinArguments, LeaveArguments, Queue, QueueArguments, RemoveArguments, TonelistError, TonelistErrorType } from "./types";
 import { Store, StoreErrorType } from "./store/types";
 import InMemoryStore from "./store/in-memory-store";
+import initCommands from "./commands/init";
 
 class BaseTonelist {
 	logger: Logger;
@@ -47,7 +48,7 @@ class BaseTonelist {
 		return this;
 	}
 
-	private async findOrCreateQueue(guildId: string) {
+	async findOrCreateQueue(guildId: string) {
 		let queue: Queue;
 
 		try {
@@ -68,7 +69,7 @@ class BaseTonelist {
 		return queue;
 	}
 
-	private async getGuild(guildId: string) {
+	async getGuild(guildId: string) {
 		const guild = this.client.guilds.cache.get(guildId);
 		if (!guild) {
 			const freshGuild = await this.client.guilds.fetch(guildId);
@@ -82,7 +83,7 @@ class BaseTonelist {
 		return guild;
 	}
 
-	private async getVoiceChannel(guildId: string, channelId: string) {
+	async getVoiceChannel(guildId: string, channelId: string) {
 		const guild = await this.getGuild(guildId);
 		const channel = guild.channels.cache.get(channelId);
 		if (!channel) {
@@ -202,7 +203,12 @@ export class Tonelist extends BaseTonelist {
 	async init(options: InitOptions, ready?: (client: Client) => void) {
 		await super.init(
 			options,
-			ready
+			async () => {
+				await initCommands(this, {
+					...options?.commandOptions ?? {}
+				})
+				ready?.(this.client);
+			}
 		);
 
 		return this;

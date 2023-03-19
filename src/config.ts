@@ -6,6 +6,7 @@ type Config = {
 	lavaPort: number;
 	lavaPassword: string;
 	clientId: string;
+	testGuilds?: string;
 	logLevel?: string;
 }
 
@@ -27,6 +28,7 @@ const OPTION_TYPES: Record<string, string> = {
 	lavaHost: 'string',
 	lavaPort: 'number',
 	lavaPassword: 'string',
+	testGuilds: 'string',
 }
 
 function toCaps(str: string) {

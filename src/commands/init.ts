@@ -2,6 +2,7 @@ import { ApplicationCommandOptionType, ChatInputCommandInteraction, GuildMember,
 import { Tonelist } from "../tonelist";
 import { TonelistErrorType } from "../types";
 import Enqueue from "./enqueue";
+import Leave from "./leave";
 import List from "./list";
 import Ping from "./ping";
 import Remove from "./remove";
@@ -75,7 +76,8 @@ async function initCommands(tonelist: Tonelist, options: InitCommandOptions) {
 		Ping,
 		Enqueue,
 		List,
-		Remove
+		Remove,
+		Leave
 	];
 
 	await registerCommands(tonelist, options, commands);

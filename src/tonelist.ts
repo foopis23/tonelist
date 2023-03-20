@@ -173,11 +173,10 @@ class BaseTonelist {
 	async enqueue(args: EnqueueArguments) {
 		const { guildId, voiceChannelId, query } = args;
 
-		let player = this.findOrCreatePlayer(guildId);
+		const player = this.findOrCreatePlayer(guildId);
 		const tracks = await this.node.rest.loadTracks(query);
 
 		if (!player?.connected) {
-			player ??= this.node.createPlayer(guildId);
 			player.connect(voiceChannelId, { deafened: true });
 		}
 

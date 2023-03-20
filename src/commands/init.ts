@@ -4,6 +4,7 @@ import { TonelistErrorType } from "../types";
 import Enqueue from "./enqueue";
 import List from "./list";
 import Ping from "./ping";
+import Remove from "./remove";
 import { CommandArguments, CommandConfig, InitCommandOptions } from "./types";
 
 async function registerCommands(tonelist: Tonelist, options: InitCommandOptions, commands: CommandConfig[]) {
@@ -73,7 +74,8 @@ async function initCommands(tonelist: Tonelist, options: InitCommandOptions) {
 	const commands: CommandConfig[] = [
 		Ping,
 		Enqueue,
-		List
+		List,
+		Remove
 	];
 
 	await registerCommands(tonelist, options, commands);

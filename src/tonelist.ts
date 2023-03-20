@@ -141,6 +141,10 @@ class BaseTonelist {
 		}
 
 		player.connect(voiceChannelId, { deafened: true });
+		
+		if (!player.playing) {
+			await player.play(queue.tracks[0].track);
+		}
 
 		return {
 			queue,

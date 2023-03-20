@@ -98,10 +98,37 @@ class BaseTonelist {
 		return channel;
 	}
 
+	createPlayer(guildId: string) {
+		const player = this.node.createPlayer(guildId);
+		player.on('trackEnd', async () => {
+			const queue = await this.findOrCreateQueue(guildId);
+			queue.tracks.shift();
+			await this.queues.set(guildId, queue);
+
+			if (queue.tracks.length) {
+				await player.play(queue.tracks[0].track);
+			} else {
+				player.disconnect();
+				this.node.destroyPlayer(player.guildId);
+			}
+		});
+
+		return player;
+	}
+
+	findOrCreatePlayer(guildId: string) {
+		let player = this.node.players.get(guildId);
+		if (!player) {
+			player = this.createPlayer(guildId);
+		}
+
+		return player;
+	}
+
 	async join(args: JoinArguments) {
 		const { guildId, textChannelId, voiceChannelId } = args;
 
-		const player = this.node.createPlayer(guildId);
+		const player = this.findOrCreatePlayer(guildId);
 
 		if (player.connected) {
 			throw new TonelistError('Already connected to a voice channel', TonelistErrorType.ALREADY_CONNECTED);
@@ -146,11 +173,10 @@ class BaseTonelist {
 	async enqueue(args: EnqueueArguments) {
 		const { guildId, voiceChannelId, query } = args;
 
-		let player = this.node.players.get(guildId);
+		const player = this.findOrCreatePlayer(guildId);
 		const tracks = await this.node.rest.loadTracks(query);
 
 		if (!player?.connected) {
-			player ??= this.node.createPlayer(guildId);
 			player.connect(voiceChannelId, { deafened: true });
 		}
 

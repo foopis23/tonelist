@@ -2,6 +2,20 @@ import { SlashCommandBuilder } from "discord.js";
 import makePlainTextTable from "./helpers/table";
 import { CommandConfig } from "./types";
 
+function formateDuration(durationMS: number) {
+	const duration = new Date(durationMS);
+
+	const hours = duration.getUTCHours().toString().padStart(2, '0');
+	const minutes = duration.getUTCMinutes().toString().padStart(2, '0');
+	const seconds = duration.getUTCSeconds().toString().padStart(2, '0');
+
+	const hoursString = hours !== '00' ? `${hours}:` : '';
+	const minutesString = minutes !== '00' ? `${minutes}:` : '';
+	const secondsString = seconds !== '00' ? `${seconds}` : '';
+
+	return `${hoursString}${minutesString}${secondsString}`;
+}
+
 const List: CommandConfig = {
 	data: new SlashCommandBuilder()
 		.setName('list')
@@ -18,7 +32,7 @@ const List: CommandConfig = {
 		}
 
 		const headers = ['Index', 'Title', 'Duration'];
-		const body = queue.map((track, index) => [index.toString(), track.info.title, track.info.isStream ? 'LIVE' : track.info.length.toString()]);
+		const body = queue.map((track, index) => [index.toString(), track.info.title, track.info.isStream ? 'LIVE' : formateDuration(track.info.length)]);
 
 		const table = makePlainTextTable([headers, ...body]);
 

@@ -10,7 +10,7 @@ const Skip: CommandConfig = {
 			guildId: interaction.guildId
 		});
 
-		await interaction.reply(`Skipped ${skipped.title}`);
+		await interaction.reply(`Skipped \`${skipped.title}\``);
 	}
 }
 

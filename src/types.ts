@@ -45,6 +45,7 @@ export type LeaveArguments = {
 export type EnqueueArguments = {
 	guildId: string;
 	voiceChannelId: string;
+	textChannelId?: string;
 	query: string;
 }
 

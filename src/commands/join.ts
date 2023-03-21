@@ -1,11 +1,11 @@
 import { SlashCommandBuilder } from "discord.js";
 import { CommandConfig } from "./types";
 
-const Join : CommandConfig = {
-	data : new SlashCommandBuilder()
+const Join: CommandConfig = {
+	data: new SlashCommandBuilder()
 		.setName('join')
 		.setDescription('Join the voice channel'),
-	execute : async ({ interaction, tonelist, voiceChannel }) => {
+	execute: async ({ interaction, tonelist, voiceChannel, textChannel }) => {
 		await interaction.deferReply();
 
 		const queue = (await tonelist.findOrCreateQueue(interaction.guildId)).tracks;
@@ -22,7 +22,8 @@ const Join : CommandConfig = {
 
 		await tonelist.join({
 			guildId: interaction.guildId,
-			voiceChannelId: voiceChannel.id
+			voiceChannelId: voiceChannel.id,
+			textChannelId: textChannel.id
 		})
 
 		await interaction.editReply('Joined the voice channel');

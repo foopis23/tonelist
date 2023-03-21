@@ -29,5 +29,4 @@ services:
       driver: none
 
 volumes:
-  data:
   node_modules:

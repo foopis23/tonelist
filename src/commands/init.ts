@@ -7,6 +7,7 @@ import Leave from "./leave";
 import List from "./list";
 import Ping from "./ping";
 import Remove from "./remove";
+import Skip from "./skip";
 import { CommandArguments, CommandConfig, InitCommandOptions } from "./types";
 
 async function registerCommands(tonelist: Tonelist, options: InitCommandOptions, commands: CommandConfig[]) {
@@ -79,7 +80,8 @@ async function initCommands(tonelist: Tonelist, options: InitCommandOptions) {
 		List,
 		Remove,
 		Leave,
-		Join
+		Join,
+		Skip
 	];
 
 	await registerCommands(tonelist, options, commands);
@@ -111,6 +113,12 @@ async function initCommands(tonelist: Tonelist, options: InitCommandOptions) {
 						return;
 					case TonelistErrorType.INDEX_OUT_OF_BOUNDS:
 						await interaction.editReply('Index needs to be between 0 and the queue length');
+						return;
+					case TonelistErrorType.NOT_PLAYING:
+						await interaction.editReply('Not playing anything');
+						return;
+					case TonelistErrorType.NO_MORE_TRACKS:
+						await interaction.editReply('No more tracks in queue');
 						return;
 				}
 			}

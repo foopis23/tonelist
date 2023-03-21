@@ -22,6 +22,8 @@ export enum TonelistErrorType {
 	ALREADY_CONNECTED = 'Already connected to a voice channel',
 	NOT_CONNECTED = 'Not connected to a voice channel',
 	INDEX_OUT_OF_BOUNDS = 'Index out of bounds',
+	NOT_PLAYING = 'Not playing',
+	NO_MORE_TRACKS = 'No more tracks in queue',
 }
 
 export class TonelistError extends Error {
@@ -52,5 +54,9 @@ export type RemoveArguments = {
 }
 
 export type QueueArguments = {
+	guildId: string;
+}
+
+export type SkipArguments = {
 	guildId: string;
 }

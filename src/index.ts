@@ -9,6 +9,10 @@ program
 	.addOption(new Option('--log-level <level>', 'set log level').choices(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']))
 	.option('--token <token>', 'set Discord bot token')
 	.option('--client-id <id>', 'set Discord client ID')
+	.option('--lava-host <host>', 'set Lavalink host')
+	.option('--lava-port <port>', 'set Lavalink port')
+	.option('--lava-password <password>', 'set Lavalink password')
+	.option('--test-guilds <guilds>', 'set comma-separated list of guild IDs to enable test mode');
 
 program.parse(process.argv);
 

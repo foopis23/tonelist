@@ -1,4 +1,4 @@
-import { Client, GatewayDispatchEvents, GatewayIntentBits } from "discord.js";
+import { Client, GatewayDispatchEvents, GatewayIntentBits, TextBasedChannel, TextChannel } from "discord.js";
 import pino, { Logger } from "pino";
 import { Node } from "lavaclient";
 import { EnqueueArguments, InitOptions, JoinArguments, LeaveArguments, Queue, QueueArguments, RemoveArguments, SkipArguments, TonelistError, TonelistErrorType } from "./types";
@@ -83,7 +83,7 @@ class BaseTonelist {
 		return guild;
 	}
 
-	async getVoiceChannel(guildId: string, channelId: string) {
+	async getChannel(guildId: string, channelId: string) {
 		const guild = await this.getGuild(guildId);
 		const channel = guild.channels.cache.get(channelId);
 		if (!channel) {
@@ -120,6 +120,14 @@ class BaseTonelist {
 		} else {
 			await this.queues.set(guildId, queue);
 			await player.play(queue.tracks[0].track);
+
+			if (queue.textChannel) {
+				const channel = await this.getChannel(guildId, queue.textChannel);
+
+				if (channel.isTextBased()) {
+					await (channel as TextChannel).send(`Now playing \`${queue.tracks[0].info.title}\``);
+				}
+			}
 		}
 	}
 
@@ -170,7 +178,7 @@ class BaseTonelist {
 			throw new TonelistError('Not connected to a voice channel', TonelistErrorType.NOT_CONNECTED);
 		}
 
-		const voiceChannel = await this.getVoiceChannel(guildId, player.channelId);
+		const voiceChannel = await this.getChannel(guildId, player.channelId);
 
 		player.disconnect();
 		this.node.destroyPlayer(player.guildId);
@@ -193,6 +201,11 @@ class BaseTonelist {
 
 		const queue = await this.findOrCreateQueue(guildId);
 		queue.tracks.push(...tracks.tracks);
+
+		if (!queue.textChannel && args.textChannelId) {
+			queue.textChannel = args.textChannelId;
+		}
+
 		await this.queues.set(guildId, queue);
 
 		const started = player.playing || player.paused;

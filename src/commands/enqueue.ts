@@ -12,7 +12,7 @@ const Enqueue: CommandConfig = {
 				.setRequired(true)
 		),
 
-	execute: async ({ interaction, tonelist, args, voiceChannel }) => {
+	execute: async ({ interaction, tonelist, args, voiceChannel, textChannel }) => {
 		await interaction.deferReply();
 
 		if (!voiceChannel) throw new Error('Join a voice channel to enqueue a song');
@@ -22,7 +22,8 @@ const Enqueue: CommandConfig = {
 		const { queue } = await tonelist.enqueue({
 			guildId: interaction.guildId,
 			query: args.query as string,
-			voiceChannelId: voiceChannel.id
+			voiceChannelId: voiceChannel.id,
+			textChannelId: textChannel.id
 		});
 
 		if (queue.tracks.length - lengthBefore > 1) {

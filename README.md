@@ -1,6 +1,8 @@
 # Tonelist2
 Tonelist2 is a Discord Bot that plays music from Youtube and Soundcloud. It has Slash Command support and an API for developers. Its written in typescript with discord.js and lavalink.
 
+**Tonelist2 is in early development. It is not yet ready for production use yet. Expect bugs, missing features and API changes.**
+
 ## Features
 - Play music from youtube and soundcloud
 - Slash Commands

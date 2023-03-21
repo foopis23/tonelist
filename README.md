@@ -5,7 +5,7 @@ Tonelist2 is a discord music bot that plays music from youtube and soundcloud. I
 - Play music from youtube and soundcloud
 - Slash Commands
 - Queue system
-- Enqueue multiple songs with Youtube playlists
+- Enqueuing multiple songs with Youtube playlists
 
 ## Commands
 - `enqueue <url>` - Enqueues a song from youtube or soundcloud

@@ -1,4 +1,4 @@
-import { APIInteractionDataResolvedChannel, APIInteractionDataResolvedGuildMember, APIRole, Attachment, ChatInputCommandInteraction, GuildBasedChannel, GuildMember, GuildTextBasedChannel, Role, SlashCommandBuilder, TextChannel, User, VoiceBasedChannel, VoiceChannel } from "discord.js"
+import { APIInteractionDataResolvedChannel, APIInteractionDataResolvedGuildMember, APIRole, Attachment, ChatInputCommandInteraction, GuildBasedChannel, GuildMember, GuildTextBasedChannel, Role, SlashCommandBuilder, User, VoiceBasedChannel } from "discord.js"
 import { Tonelist } from "../tonelist";
 
 export type InteractionChannel = NonNullable<APIInteractionDataResolvedChannel | GuildBasedChannel>;

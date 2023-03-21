@@ -1,4 +1,4 @@
-import { Client, GatewayDispatchEvents, GatewayIntentBits, TextBasedChannel, TextChannel } from "discord.js";
+import { Client, GatewayDispatchEvents, GatewayIntentBits, TextChannel } from "discord.js";
 import pino, { Logger } from "pino";
 import { Node } from "lavaclient";
 import { EnqueueArguments, InitOptions, JoinArguments, LeaveArguments, Queue, QueueArguments, RemoveArguments, SkipArguments, TonelistError, TonelistErrorType } from "./types";

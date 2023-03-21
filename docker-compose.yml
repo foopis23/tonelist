@@ -17,6 +17,7 @@ services:
       - lavalink
     environment:
       NODE_ENV: development
+      LAVA_HOST: lavalink
   
   lavalink:
     image: fredboat/lavalink:latest

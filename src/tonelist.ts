@@ -1,7 +1,7 @@
 import { Client, GatewayDispatchEvents, GatewayIntentBits } from "discord.js";
 import pino, { Logger } from "pino";
 import { Node } from "lavaclient";
-import { EnqueueArguments, InitOptions, JoinArguments, LeaveArguments, Queue, QueueArguments, RemoveArguments, TonelistError, TonelistErrorType } from "./types";
+import { EnqueueArguments, InitOptions, JoinArguments, LeaveArguments, Queue, QueueArguments, RemoveArguments, SkipArguments, TonelistError, TonelistErrorType } from "./types";
 import { Store, StoreErrorType } from "./store/types";
 import InMemoryStore from "./store/in-memory-store";
 import initCommands from "./commands/init";
@@ -98,22 +98,29 @@ class BaseTonelist {
 		return channel;
 	}
 
-	createPlayer(guildId: string) {
+	private createPlayer(guildId: string) {
 		const player = this.node.createPlayer(guildId);
 		player.on('trackEnd', async () => {
-			const queue = await this.findOrCreateQueue(guildId);
-			queue.tracks.shift();
-			await this.queues.set(guildId, queue);
-
-			if (queue.tracks.length) {
-				await player.play(queue.tracks[0].track);
-			} else {
-				player.disconnect();
-				this.node.destroyPlayer(player.guildId);
-			}
+			await this.playNext(guildId);
 		});
 
 		return player;
+	}
+
+	private async playNext(guildId: string) {
+		const queue = await this.findOrCreateQueue(guildId);
+		queue.tracks.shift();
+
+		const player = this.node.players.get(guildId);
+
+		if (queue.tracks.length < 1) {
+			player.disconnect();
+			this.node.destroyPlayer(player.guildId);
+			await this.queues.delete(guildId);
+		} else {
+			await this.queues.set(guildId, queue);
+			await player.play(queue.tracks[0].track);
+		}
 	}
 
 	findOrCreatePlayer(guildId: string) {
@@ -141,7 +148,7 @@ class BaseTonelist {
 		}
 
 		player.connect(voiceChannelId, { deafened: true });
-		
+
 		if (!player.playing) {
 			await player.play(queue.tracks[0].track);
 		}
@@ -225,6 +232,20 @@ class BaseTonelist {
 		return {
 			queue: await this.findOrCreateQueue(guildId),
 			guildId
+		};
+	}
+
+	async skip(args: SkipArguments) {
+		const { guildId } = args;
+		const player = this.node.players.get(guildId);
+		const currentTrack = player.trackData;
+
+		await player.stop();
+
+		return {
+			queue: await this.findOrCreateQueue(guildId),
+			guildId,
+			skipped: currentTrack
 		};
 	}
 }

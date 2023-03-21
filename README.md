@@ -1,5 +1,5 @@
 # Tonelist2
-Tonelist2 is a discord music bot that plays music from youtube and soundcloud. It is written with discord.js and lavalink.
+Tonelist2 is a discord music bot that plays music from youtube and soundcloud. Its written in typescript with discord.js and lavalink.
 
 ## Features
 - Play music from youtube and soundcloud

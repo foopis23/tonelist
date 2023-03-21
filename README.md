@@ -37,6 +37,47 @@ There are 4 env files. `.env`, `.env.development`, `.env.production`, `.env.loca
 ## Application.yml
 The `application.yml` file in the root is used to configure lavalink. Its just the default configuration for lavalink. If you are going to run lavalink in docker, you need to mount the `application.yml` file to `/opt/Lavalink/application.yml` in the container.
 
+## Deploy with Docker
+1. Clone the repo to sever
+2. Update lavalink password in the application.yml in the root of the project
+3. Create a `docker-compose.prod.yml` with the same compose fiel below
+4. Update the LAVA_PASSWORD to match the application.yml
+5. Update the TOKEN to your discord bot token and client id to your discord application client id
+6. run `docker compose -f docker-compose.prod.yml up -d`
+
+### Example Docker Compose
+```yml
+version: '3'
+
+services:
+  tonelist:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - lavalink
+    environment:
+      NODE_ENV: production
+      LAVA_HOST: lavalink
+      LAVA_PORT: 2333
+      LAVA_PASSWORD: yourpasswordhere
+      TOKEN: your_discord_token_here
+      CLIENT_ID: your_discord_client_id
+    restart: unless-stopped
+  
+  lavalink:
+    image: fredboat/lavalink:latest
+    volumes:
+      - ./application.yml:/opt/Lavalink/application.yml
+    ports:
+      - "2333:2333"
+    logging:
+      driver: none
+    restart: unless-stopped
+```
+
+
+
 ## Contributing
 To contribute fork the repo and create a pull request. Please make sure to run `npm run lint` before creating a pull request.
 

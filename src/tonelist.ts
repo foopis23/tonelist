@@ -5,6 +5,7 @@ import { EnqueueArguments, InitOptions, JoinArguments, LeaveArguments, Queue, Qu
 import { Store, StoreErrorType } from "./store/types";
 import InMemoryStore from "./store/in-memory-store";
 import initCommands from "./commands/init";
+import initAPI from "./api/init";
 
 class BaseTonelist {
 	logger: Logger;
@@ -274,6 +275,8 @@ export class Tonelist extends BaseTonelist {
 				ready?.(this.client);
 			}
 		);
+
+		await initAPI(tonelist);
 
 		return this;
 	}

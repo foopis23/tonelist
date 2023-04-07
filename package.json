@@ -18,6 +18,7 @@
     "@typescript-eslint/parser": "^5.54.0",
     "cross-env": "^7.0.3",
     "eslint": "^8.35.0",
+    "json-schema-to-ts": "^2.7.2",
     "nodemon": "^2.0.20",
     "pino-pretty": "^9.4.0",
     "ts-node": "^10.9.1",

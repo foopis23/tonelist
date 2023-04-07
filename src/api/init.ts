@@ -1,5 +1,6 @@
 import Fastify from 'fastify';
 import { Tonelist } from '../tonelist';
+import v1Routes from './v1';
 
 async function initAPI(tonelist: Tonelist) {
 	const logger = tonelist.logger.child({ module: 'api' });
@@ -7,9 +8,7 @@ async function initAPI(tonelist: Tonelist) {
 		logger: logger,
 	});
 
-	fastify.get('/', async () => {
-		return { hello: 'world' }
-	});
+	fastify.register(v1Routes, { prefix: '/api/v1', tonelist },)
 
 	try {
 		await fastify.listen({ port: 3000, host: '0.0.0.0' });

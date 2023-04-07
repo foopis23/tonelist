@@ -49,6 +49,10 @@ class BaseTonelist {
 		return this;
 	}
 
+	async findQueue(guildId: string) {
+		return this.queues.get(guildId);
+	}
+
 	async findOrCreateQueue(guildId: string) {
 		let queue: Queue;
 

@@ -11,14 +11,10 @@ const Remove: CommandConfig = {
 
 		const index = interaction.options.getInteger('index', true);
 
-		const queue = (await tonelist.findOrCreateQueue(interaction.guildId)).tracks;
-
-		if (index < 0 || index >= queue.length) {
-			await interaction.editReply('Invalid index. Index needs to be between 0 and the queue length');
-			return;
-		}
-
-		const removedTrack = queue.splice(index, 1)[0];
+		const { removedTrack } = await tonelist.remove({
+			guildId: interaction.guildId,
+			index
+		});
 
 		await interaction.editReply(`Removed ${removedTrack.info.title}`);
 	}

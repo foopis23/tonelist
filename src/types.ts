@@ -25,6 +25,7 @@ export enum TonelistErrorType {
 	INDEX_OUT_OF_BOUNDS = 'Index out of bounds',
 	NOT_PLAYING = 'Not playing',
 	NO_MORE_TRACKS = 'No more tracks in queue',
+	CANNOT_REMOVE_CURRENT = 'Cannot remove the currently playing track'
 }
 
 const ERROR_TO_RPC_CODE: Record<TonelistErrorType, number> = {
@@ -33,6 +34,7 @@ const ERROR_TO_RPC_CODE: Record<TonelistErrorType, number> = {
 	[TonelistErrorType.INDEX_OUT_OF_BOUNDS]: -32002,
 	[TonelistErrorType.NOT_PLAYING]: -32003,
 	[TonelistErrorType.NO_MORE_TRACKS]: -32004,
+	[TonelistErrorType.CANNOT_REMOVE_CURRENT]: -32006
 };
 
 export class TonelistError extends Error implements RPCError {

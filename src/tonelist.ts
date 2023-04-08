@@ -228,19 +228,24 @@ class BaseTonelist {
 	async remove(args: RemoveArguments) {
 		const { guildId, index } = args;
 
+		if (index == 0) {
+			throw new TonelistError('Cannot remove the currently playing track', TonelistErrorType.CANNOT_REMOVE_CURRENT);
+		}
+
 		const queue = await this.findOrCreateQueue(guildId);
 
 		if (index < 0 || index >= queue.tracks.length) {
-			queue.tracks.splice(index, 1);
-		} else {
 			throw new TonelistError('Index out of bounds', TonelistErrorType.INDEX_OUT_OF_BOUNDS);
 		}
 
+		const removedTracks = queue.tracks.splice(index, 1);
 		await this.queues.set(guildId, queue);
+
 
 		return {
 			queue,
-			guildId
+			guildId,
+			removedTrack: removedTracks[0]
 		};
 	}
 

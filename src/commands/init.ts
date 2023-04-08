@@ -112,7 +112,7 @@ async function initCommands(tonelist: Tonelist, options: InitCommandOptions) {
 						await interaction.editReply('Not connected to a voice channel');
 						return;
 					case TonelistErrorType.INDEX_OUT_OF_BOUNDS:
-						await interaction.editReply('Index needs to be between 0 and the queue length');
+						await interaction.editReply('Index needs to be between 1 and the queue length');
 						return;
 					case TonelistErrorType.NOT_PLAYING:
 						await interaction.editReply('Not playing anything');

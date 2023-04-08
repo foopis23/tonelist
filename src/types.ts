@@ -3,6 +3,7 @@ import { LoggerOptions } from "pino";
 import { ConnectionInfo } from "lavaclient";
 import { Track } from "@lavaclient/types/v3";
 import { InitCommandOptions } from "./commands/types";
+import { RPCError } from "./api/v1/types";
 
 export type InitOptions = {
 	loggerOptions?: LoggerOptions;
@@ -26,9 +27,24 @@ export enum TonelistErrorType {
 	NO_MORE_TRACKS = 'No more tracks in queue',
 }
 
-export class TonelistError extends Error {
+const ERROR_TO_RPC_CODE: Record<TonelistErrorType, number> = {
+	[TonelistErrorType.ALREADY_CONNECTED]: -32000,
+	[TonelistErrorType.NOT_CONNECTED]: -32001,
+	[TonelistErrorType.INDEX_OUT_OF_BOUNDS]: -32002,
+	[TonelistErrorType.NOT_PLAYING]: -32003,
+	[TonelistErrorType.NO_MORE_TRACKS]: -32004,
+};
+
+export class TonelistError extends Error implements RPCError {
 	constructor(message: string, public type: TonelistErrorType) {
 		super(message);
+	}
+
+	toRpcError() {
+		return {
+			code: ERROR_TO_RPC_CODE[this.type],
+			message: this.message
+		};
 	}
 }
 

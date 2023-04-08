@@ -1,39 +1,36 @@
 import { FastifyPluginCallback, FastifyPluginOptions, FastifySchema } from "fastify";
 import { Tonelist } from "../../tonelist";
-import { Queue, errorSchema, ErrorSchema, queue } from "./schema-components";
+import { jsonRpcRequest, JsonRpcRequest } from "./schema-components";
 import { StoreErrorType } from "../../store/types";
+import { JSONRPCServer, JSONRPCServerMiddleware } from "json-rpc-2.0";
+import { Logger } from "pino";
+import { isRpcError } from "./types";
 
 const getQueueSchema: FastifySchema = {
 	params: {
 		type: 'object',
 		properties: {
 			guildId: { type: 'string' }
-		}
-	},
-	response: {
-		200: queue,
-		400: errorSchema,
-		401: errorSchema,
-		403: errorSchema,
-		404: errorSchema
+		},
+		required: ['guildId']
 	}
 };
 type GetQueueSchema = {
 	Params: {
 		guildId: string
-	},
-	Response: {
-		200: Queue,
-		400: ErrorSchema,
-		401: ErrorSchema,
-		403: ErrorSchema,
-		404: ErrorSchema
 	}
 }
 
+const postActionsSchema: FastifySchema = {
+	body: jsonRpcRequest,
+};
+type PostActionsSchema = {
+	Body: JsonRpcRequest
+};
 
-const v1Routes: FastifyPluginCallback<FastifyPluginOptions & { tonelist: Tonelist }> = async function (fastify, opts) {
+const v1Routes: FastifyPluginCallback<FastifyPluginOptions & { tonelist: Tonelist, logger: Logger }> = async function (fastify, opts) {
 	const tonelist = opts.tonelist;
+	const logger = opts.logger;
 
 	fastify.get<GetQueueSchema>('/queues/:guildId', {
 		schema: getQueueSchema
@@ -53,6 +50,68 @@ const v1Routes: FastifyPluginCallback<FastifyPluginOptions & { tonelist: Tonelis
 				throw e;
 			}
 		}
+	});
+
+	const jsonRpcServer = new JSONRPCServer();
+
+	const loggingMiddleware: JSONRPCServerMiddleware<void> = async (next, request, serverParams) => {
+		logger.info({ request }, 'incoming JSON-RPC request');
+
+		const response = await next(request, serverParams);
+		logger.info({
+			response: {
+				jsonrpc: response.jsonrpc,
+				id: response.id,
+				error: response.error,
+			}
+		}, 'completed JSON-RPC response');
+		return response;
+	};
+	const exceptionMiddleware: JSONRPCServerMiddleware<void> = async (next, request, serverParams) => {
+		try {
+			return await next(request, serverParams);
+		} catch (e) {
+			if (isRpcError(e)) {
+				return {
+					jsonrpc: '2.0',
+					id: request.id,
+					error: e.toRpcError()
+				}
+			}
+
+			logger.error({ err: e }, 'unhandled error in JSON-RPC request');
+
+			return {
+				jsonrpc: '2.0',
+				id: request.id,
+				error: {
+					code: -32603,
+					message: 'Internal error'
+				}
+			};
+		}
+	};
+
+	jsonRpcServer.applyMiddleware(loggingMiddleware, exceptionMiddleware);
+	jsonRpcServer.addMethod('enqueue', (opts) => tonelist.enqueue(opts));
+	jsonRpcServer.addMethod('remove', (opts) => tonelist.remove(opts));
+	jsonRpcServer.addMethod('join', (opts) => tonelist.join(opts));
+	jsonRpcServer.addMethod('leave', (opts) => tonelist.leave(opts));
+	jsonRpcServer.addMethod('skip', (opts) => tonelist.skip(opts));
+
+	fastify.post<PostActionsSchema>('/actions', {
+		schema: postActionsSchema
+	}, async (request, reply) => {
+		const jsonRpcRequest = request.body;
+		const response = await jsonRpcServer.receive(jsonRpcRequest).then((response) => {
+			return response;
+		})
+
+		if (response.error != undefined) {
+			reply.code(500);
+		}
+
+		return response;
 	});
 }
 

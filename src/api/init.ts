@@ -11,27 +11,29 @@ async function initAPI(tonelist: Tonelist) {
 	});
 
 	await fastify.register(fastifySwagger, {
-		swagger: {
+		openapi: {
 			info: {
 				version: '1.0.0',
 				title: 'Tonelist2 API',
 				description: 'Control Tonelist2 from an API'
 			},
-			host: 'localhost:3000',
-			schemes: ['http'],
-			consumes: ['application/json'],
-			produces: ['application/json'],
-			securityDefinitions: {
-				ApiKey: {
-					type: 'apiKey',
-					name: 'X-API-KEY',
-					in: 'header'
-				},
-				// BearerAuth: {
-				// 	type: 'http',
-				// 	scheme: 'bearer',
-				// 	bearerFormat: 'JWT'
-				// }
+			servers: [
+				{
+					url: 'http://localhost:3000',
+				}
+			],
+			components: {
+				securitySchemes: {
+					apiKey: {
+						type: 'apiKey',
+						name: 'X-API-Key',
+						in: 'header'
+					},
+					bearerAuth: {
+						type: 'http',
+						scheme: 'bearer',
+					}
+				}
 			}
 		}
 	});
@@ -40,7 +42,7 @@ async function initAPI(tonelist: Tonelist) {
 		routePrefix: '/api/documentation'
 	});
 
-	fastify.register(v1Routes, { prefix: '/api/v1', tonelist });
+	fastify.register(v1Routes, { prefix: '/api/v1', tonelist, logger });
 
 	try {
 		await fastify.listen({ port: 3000, host: '0.0.0.0' });

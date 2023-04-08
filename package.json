@@ -31,6 +31,7 @@
     "discord.js": "^14.7.1",
     "dotenv": "^16.0.3",
     "fastify": "^4.15.0",
+    "json-rpc-2.0": "^1.5.1",
     "lavaclient": "^4.1.1",
     "pino": "^8.11.0"
   }

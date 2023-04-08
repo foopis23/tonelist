@@ -17,7 +17,7 @@ export const jsonRpcVersion = {
 export type JsonRpcVersion = FromSchema<typeof jsonRpcVersion>;
 
 export const jsonRpcId = {
-	oneOf: [
+	anyOf: [
 		{ type: 'string' },
 		{ type: 'number' }
 	]
@@ -39,21 +39,23 @@ export const jsonRpcError = {
 } as const;
 export type JsonRpcError = FromSchema<typeof jsonRpcError>;
 
+export const anyValue = {
+	anyOf: [
+		{ type: 'string' },
+		{ type: 'number' },
+		{ type: 'integer' },
+		{ type: 'boolean' },
+		{ type: 'object' },
+		{ type: 'array' }
+	]
+} as const;
+
 export const jsonRpcResponse = {
 	type: 'object',
 	properties: {
 		jsonrpc: jsonRpcVersion,
 		id: jsonRpcId,
-		result: {
-			anyOf: [
-				{ type: 'null' },
-				{ type: 'string' },
-				{ type: 'number' },
-				{ type: 'boolean' },
-				{ type: 'object' },
-				{ type: 'array' }
-			]
-		}
+		result: anyValue
 	}
 } as const;
 export type JsonRpcResponse = FromSchema<typeof jsonRpcResponse>;
@@ -68,17 +70,9 @@ export const jsonRpcRequest = {
 			// TODO: maybe auto populate this
 			enum: ["enqueue", "join", "leave", "remove", "skip"]
 		},
-		params: {
-			anyOf: [
-				{ type: 'null' },
-				{ type: 'string' },
-				{ type: 'number' },
-				{ type: 'boolean' },
-				{ type: 'object' },
-				{ type: 'array' }
-			] as const
-		}
-	}
+		params: anyValue
+	},
+	required: ['jsonrpc', 'method']
 } as const;
 export type JsonRpcRequest = FromSchema<typeof jsonRpcRequest>;
 

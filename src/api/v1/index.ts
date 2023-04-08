@@ -102,6 +102,9 @@ const v1Routes: FastifyPluginCallback<FastifyPluginOptions & { tonelist: Tonelis
 	fastify.post<PostActionsSchema>('/actions', {
 		schema: postActionsSchema
 	}, async (request, reply) => {
+		// TODO: if req.user is not in guild, return 403
+		// TODO: if req.apiKey does not read:queues permission, return 403
+
 		const jsonRpcRequest = request.body;
 		const response = await jsonRpcServer.receive(jsonRpcRequest).then((response) => {
 			return response;

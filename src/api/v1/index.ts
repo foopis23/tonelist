@@ -2,11 +2,13 @@ import { FastifyPluginCallback, FastifyPluginOptions, FastifySchema } from "fast
 import { Tonelist } from "../../tonelist";
 import { jsonRpcRequest, JsonRpcRequest } from "./schema-components";
 import { StoreErrorType } from "../../store/types";
-import { JSONRPCServer, JSONRPCServerMiddleware } from "json-rpc-2.0";
 import { Logger } from "pino";
-import { isRpcError } from "./types";
+import fastifySwagger from '@fastify/swagger';
+import fastifySwaggerUI from '@fastify/swagger-ui';
+import initJSONRPC from "./jsonrpc";
 
 const getQueueSchema: FastifySchema = {
+	summary: 'Get the queue for a guild',
 	params: {
 		type: 'object',
 		properties: {
@@ -22,7 +24,8 @@ type GetQueueSchema = {
 }
 
 const postActionsSchema: FastifySchema = {
-	body: jsonRpcRequest,
+	summary: 'Perform a command',
+	body: jsonRpcRequest
 };
 type PostActionsSchema = {
 	Body: JsonRpcRequest
@@ -30,7 +33,40 @@ type PostActionsSchema = {
 
 const v1Routes: FastifyPluginCallback<FastifyPluginOptions & { tonelist: Tonelist, logger: Logger }> = async function (fastify, opts) {
 	const tonelist = opts.tonelist;
-	const logger = opts.logger;
+	const jsonRpcServer = initJSONRPC(opts);
+
+	await fastify.register(fastifySwagger, {
+		openapi: {
+			info: {
+				version: '1.0.0',
+				title: 'Tonelist2 v1 API',
+				description: 'Control Tonelist2 from an API'
+			},
+			servers: [
+				{
+					url: 'http://localhost:3000',
+				}
+			],
+			components: {
+				securitySchemes: {
+					apiKey: {
+						type: 'apiKey',
+						name: 'X-API-Key',
+						in: 'header'
+					},
+					bearerAuth: {
+						type: 'http',
+						scheme: 'bearer',
+					}
+				}
+			}
+		}
+	});
+
+	await fastify.register(fastifySwaggerUI, {
+		routePrefix: '/documentation'
+	});
+
 
 	fastify.get<GetQueueSchema>('/queues/:guildId', {
 		schema: getQueueSchema
@@ -51,53 +87,6 @@ const v1Routes: FastifyPluginCallback<FastifyPluginOptions & { tonelist: Tonelis
 			}
 		}
 	});
-
-	const jsonRpcServer = new JSONRPCServer();
-
-	const loggingMiddleware: JSONRPCServerMiddleware<void> = async (next, request, serverParams) => {
-		logger.info({ request }, 'incoming JSON-RPC request');
-
-		const response = await next(request, serverParams);
-		logger.info({
-			response: {
-				jsonrpc: response.jsonrpc,
-				id: response.id,
-				error: response.error,
-			}
-		}, 'completed JSON-RPC response');
-		return response;
-	};
-	const exceptionMiddleware: JSONRPCServerMiddleware<void> = async (next, request, serverParams) => {
-		try {
-			return await next(request, serverParams);
-		} catch (e) {
-			if (isRpcError(e)) {
-				return {
-					jsonrpc: '2.0',
-					id: request.id,
-					error: e.toRpcError()
-				}
-			}
-
-			logger.error({ err: e }, 'unhandled error in JSON-RPC request');
-
-			return {
-				jsonrpc: '2.0',
-				id: request.id,
-				error: {
-					code: -32603,
-					message: 'Internal error'
-				}
-			};
-		}
-	};
-
-	jsonRpcServer.applyMiddleware(loggingMiddleware, exceptionMiddleware);
-	jsonRpcServer.addMethod('enqueue', (opts) => tonelist.enqueue(opts));
-	jsonRpcServer.addMethod('remove', (opts) => tonelist.remove(opts));
-	jsonRpcServer.addMethod('join', (opts) => tonelist.join(opts));
-	jsonRpcServer.addMethod('leave', (opts) => tonelist.leave(opts));
-	jsonRpcServer.addMethod('skip', (opts) => tonelist.skip(opts));
 
 	fastify.post<PostActionsSchema>('/actions', {
 		schema: postActionsSchema

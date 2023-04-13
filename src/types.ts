@@ -1,9 +1,10 @@
-import { ClientOptions } from "discord.js";
+import { APIUser, Channel, ClientOptions, DMChannel, TextChannel, VoiceChannel } from "discord.js";
 import { LoggerOptions } from "pino";
 import { ConnectionInfo } from "lavaclient";
 import { Track } from "@lavaclient/types/v3";
 import { InitCommandOptions } from "./commands/types";
-import { RPCError } from "./api/v1/types";
+import { RPCError } from "./api/v1/rpc";
+import { Store } from "@foopis23/ts-store";
 
 export type InitOptions = {
 	loggerOptions?: LoggerOptions;
@@ -12,6 +13,7 @@ export type InitOptions = {
 	token: string;
 	clientId: string;
 	lavaConnectionInfo: ConnectionInfo;
+	store?: Store<Queue>;
 }
 
 export type Queue = {
@@ -79,3 +81,23 @@ export type QueueArguments = {
 export type SkipArguments = {
 	guildId: string;
 }
+
+export const isTextBasedChannel = (channel: Channel): channel is TextChannel => {
+	return channel.isTextBased();
+}
+
+export const isVoiceBasedChannel = (channel: Channel): channel is VoiceChannel => {
+	return channel.isVoiceBased();
+}
+
+export const isThreadBasedChannel = (channel: Channel): channel is TextChannel => {
+	return channel.isTextBased();
+}
+
+export const isDMBasedChannel = (channel: Channel): channel is DMChannel => {
+	return channel.isDMBased();
+}
+
+export const isAPIUser = (user: unknown): user is APIUser =>
+	typeof (user as APIUser).email === 'string' && typeof (user as APIUser).id === 'string';
+

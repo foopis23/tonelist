@@ -46,7 +46,7 @@ export const anyValue = {
 		{ type: 'integer' },
 		{ type: 'boolean' },
 		{ type: 'object' },
-		{ type: 'array' }
+		{ type: 'array', items: {} },
 	]
 } as const;
 

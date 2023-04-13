@@ -1,13 +1,11 @@
-import { Client, GatewayDispatchEvents, GatewayIntentBits, TextChannel } from "discord.js";
+import { Channel, Client, GatewayDispatchEvents, GatewayIntentBits, Guild, TextChannel } from "discord.js";
 import pino, { Logger } from "pino";
 import { Node } from "lavaclient";
 import { EnqueueArguments, InitOptions, JoinArguments, LeaveArguments, Queue, QueueArguments, RemoveArguments, SkipArguments, TonelistError, TonelistErrorType } from "./types";
-import { Store, StoreErrorType } from "./store/types";
-import InMemoryStore from "./store/in-memory-store";
-import initCommands from "./commands/init";
-import initAPI from "./api/init";
+import { MemoryStore, Store } from "@foopis23/ts-store";
+import { getItem } from "./util";
 
-class BaseTonelist {
+export class Tonelist {
 	logger: Logger;
 	client: Client;
 	node: Node;
@@ -43,61 +41,46 @@ class BaseTonelist {
 		}).bind(this);
 		this.client.on('ready', onReady);
 
-		this.queues = new InMemoryStore();
+		this.queues = options.store ?? new MemoryStore<Queue>();
 
 		this.client.login(options.token);
 		return this;
 	}
 
 	async findQueue(guildId: string) {
-		return this.queues.get(guildId);
+		const queue = await this.queues.get(guildId);
+		if (!queue || !queue.value) {
+			throw new Error('Queue not found');
+		}
+		return queue.value;
 	}
 
 	async findOrCreateQueue(guildId: string) {
-		let queue: Queue;
-
 		try {
-			queue = await this.queues.get(guildId)
+			return await this.findQueue(guildId)
 		} catch (e) {
-			if (e.type === StoreErrorType.NOT_FOUND) {
-				// handles queue does not exist error
-				queue = {
-					tracks: []
-				};
+			await this.queues.set(guildId, {
+				tracks: []
+			});
 
-				await this.queues.set(guildId, queue);
-			} else {
-				throw e;
-			}
+			return await this.findQueue(guildId);
 		}
-
-		return queue;
 	}
 
 	async getGuild(guildId: string) {
-		const guild = this.client.guilds.cache.get(guildId);
+		const guild = await getItem<Guild>(this.client.guilds, guildId);
 		if (!guild) {
-			const freshGuild = await this.client.guilds.fetch(guildId);
-			if (!freshGuild) {
-				throw new Error('Guild not found');
-			}
-
-			return freshGuild;
+			throw new Error('Guild not found');
 		}
-
 		return guild;
 	}
 
 	async getChannel(guildId: string, channelId: string) {
 		const guild = await this.getGuild(guildId);
-		const channel = guild.channels.cache.get(channelId);
-		if (!channel) {
-			const freshChannel = await guild.channels.fetch(channelId);
-			if (!freshChannel) {
-				throw new Error('Channel not found');
-			}
+		const channel = await getItem<Channel>(guild.channels, channelId);
 
-			return freshChannel;
+		if (!channel) {
+			throw new Error('Channel not found');
 		}
 
 		return channel;
@@ -121,7 +104,7 @@ class BaseTonelist {
 		if (queue.tracks.length < 1) {
 			player.disconnect();
 			this.node.destroyPlayer(player.guildId);
-			await this.queues.delete(guildId);
+			await this.queues.destroy(guildId);
 		} else {
 			await this.queues.set(guildId, queue);
 			await player.play(queue.tracks[0].track);
@@ -270,24 +253,6 @@ class BaseTonelist {
 			guildId,
 			skipped: currentTrack
 		};
-	}
-}
-
-export class Tonelist extends BaseTonelist {
-	async init(options: InitOptions, ready?: (client: Client) => void) {
-		await super.init(
-			options,
-			async () => {
-				await initCommands(this, {
-					...options?.commandOptions ?? {}
-				})
-				ready?.(this.client);
-			}
-		);
-
-		await initAPI(tonelist);
-
-		return this;
 	}
 }
 

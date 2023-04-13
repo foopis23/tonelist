@@ -27,10 +27,12 @@
   "dependencies": {
     "@fastify/swagger": "^8.3.1",
     "@fastify/swagger-ui": "^1.7.0",
+    "@foopis23/ts-store": "^1.0.0",
     "commander": "^10.0.0",
     "discord.js": "^14.7.1",
     "dotenv": "^16.0.3",
     "fastify": "^4.15.0",
+    "fastify-plugin": "^4.5.0",
     "json-rpc-2.0": "^1.5.1",
     "lavaclient": "^4.1.1",
     "pino": "^8.11.0"

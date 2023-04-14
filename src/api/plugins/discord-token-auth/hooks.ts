@@ -8,8 +8,6 @@ export const authenticate: preValidationAsyncHookHandler = async (request) => {
 
 	const authorization = request.headers['authorization'];
 
-	console.log({ authorization });
-
 	if (!authorization) {
 		return;
 	}

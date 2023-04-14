@@ -1,14 +1,31 @@
 import Fastify from 'fastify';
 import { Tonelist } from '../tonelist';
-import v1Routes from './v1';
+import initV1API from './v1/init';
 
-async function initAPI(tonelist: Tonelist) {
+declare module 'fastify' {
+	interface FastifyInstance {
+		tonelist: Tonelist;
+	}
+
+	interface FastifyRequest {
+		tonelist: Tonelist;
+	}
+}
+
+async function initAPI({ tonelist }: { tonelist: Tonelist }) {
 	const logger = tonelist.logger.child({ module: 'api' });
 	const fastify = Fastify({
 		logger: logger,
 	});
 
-	fastify.register(v1Routes, { prefix: '/v1', tonelist, logger });
+	fastify.decorate('tonelist', tonelist);
+	fastify.decorateRequest('tonelist', tonelist);
+	fastify.addHook('onRequest', (request, reply, done) => {
+		request.tonelist = tonelist;
+		done();
+	});
+
+	fastify.register(initV1API, { prefix: '/v1' });
 
 	try {
 		await fastify.listen({ port: 3000, host: '0.0.0.0' });

@@ -2,6 +2,8 @@ import { program, Option } from 'commander';
 import getConfig from './config';
 import tonelist from './tonelist';
 import { InitOptions } from './types';
+import initCommands from './commands/init';
+import initAPI from './api/init';
 
 program
 	.name('tonelist')
@@ -42,5 +44,15 @@ if (config.testGuilds) {
 }
 
 tonelist.init(initOptions, async () => {
+	await Promise.all([
+		initCommands(
+			tonelist,
+			{
+				...options?.commandOptions ?? {}
+			}
+		),
+		initAPI({ tonelist })
+	])
+
 	tonelist.logger.info('Tonelist is ready!');
 });

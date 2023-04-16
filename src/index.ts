@@ -61,7 +61,12 @@ tonelist.init(initOptions, async () => {
 				commands
 			}
 		),
-		initAPI({ tonelist, commands, apiKeys: (config.apiKeys) ? config.apiKeys.split(',') : [] })
+		initAPI({ 
+			tonelist,
+			commands,
+			apiKeys: (config.apiKeys) ? config.apiKeys.split(',') : [],
+			baseURL: config.baseUrl ?? 'http://localhost:3000'
+		})
 	])
 
 	tonelist.logger.info('Tonelist is ready!');

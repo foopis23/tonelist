@@ -13,7 +13,7 @@ declare module 'fastify' {
 	}
 }
 
-async function initAPI({ tonelist, commands, apiKeys }: { tonelist: Tonelist, commands: Record<string, CommandConfig>, apiKeys: string[] }) {
+async function initAPI({ tonelist, commands, apiKeys, baseURL }: { tonelist: Tonelist, commands: Record<string, CommandConfig>, apiKeys: string[], baseURL: string }) {
 	const logger = tonelist.logger.child({ module: 'api' });
 	const fastify = Fastify({
 		logger: logger,
@@ -35,7 +35,7 @@ async function initAPI({ tonelist, commands, apiKeys }: { tonelist: Tonelist, co
 			},
 			servers: [
 				{
-					url: 'http://localhost:3000',
+					url: baseURL,
 				}
 			],
 			components: {

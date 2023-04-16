@@ -5,6 +5,7 @@ import fastifySwagger from '@fastify/swagger';
 import { GetQueueSchema, getQueueHandler, getQueueSchema } from './queues';
 import { default as commandPlugin } from './commands';
 import { CommandConfig } from '../commands/types';
+import fastifyApiKeys from './fastify-api-keys';
 
 declare module 'fastify' {
 	interface FastifyRequest {
@@ -12,7 +13,7 @@ declare module 'fastify' {
 	}
 }
 
-async function initAPI({ tonelist, commands }: { tonelist: Tonelist, commands: Record<string, CommandConfig> }) {
+async function initAPI({ tonelist, commands, apiKeys }: { tonelist: Tonelist, commands: Record<string, CommandConfig>, apiKeys: string[] }) {
 	const logger = tonelist.logger.child({ module: 'api' });
 	const fastify = Fastify({
 		logger: logger,
@@ -36,15 +37,31 @@ async function initAPI({ tonelist, commands }: { tonelist: Tonelist, commands: R
 				{
 					url: 'http://localhost:3000',
 				}
-			]
+			],
+			components: {
+				securitySchemes: {
+					apiKey: {
+						type: 'apiKey',
+						name: 'x-api-key',
+						in: 'header'
+					}
+				}
+			}
 		}
 	});
 	await fastify.register(fastifySwaggerUI, {
 		routePrefix: '/documentation'
 	});
 
+	// setup api keys auth
+	await fastify.register(fastifyApiKeys, {
+		keys: apiKeys
+	});
+
 	// register guild routes
 	await fastify.register(async (fastify) => {
+		fastify.addHook('preHandler', fastify.fastifyApiKeys.requiresAuthentication);
+
 		fastify.get<GetQueueSchema>('/queue', {
 			schema: getQueueSchema
 		}, getQueueHandler);

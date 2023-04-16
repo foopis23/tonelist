@@ -54,7 +54,12 @@ function buildSchema(command: CommandConfig) {
 			type: 'object',
 			properties: bodyProperties,
 			required: (requiredBody.length > 0 ? requiredBody : undefined)
-		}
+		},
+		security: [
+			{
+				apiKey: []
+			}
+		]
 	};
 
 	return schema;

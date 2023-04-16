@@ -10,6 +10,7 @@ type Config = {
 	clientId: string;
 	testGuilds?: string;
 	logLevel?: string;
+	apiKeys?: string;
 }
 
 const REQUIRED_OPTIONS = [
@@ -17,11 +18,12 @@ const REQUIRED_OPTIONS = [
 	'clientId',
 	'lavaHost',
 	'lavaPort',
-	'lavaPassword'
+	'lavaPassword',
 ]
 
 const OPTIONS = [
-	...REQUIRED_OPTIONS
+	...REQUIRED_OPTIONS,
+	'apiKeys'
 ]
 
 const OPTION_TYPES: Record<string, string> = {
@@ -31,6 +33,7 @@ const OPTION_TYPES: Record<string, string> = {
 	lavaPort: 'number',
 	lavaPassword: 'string',
 	testGuilds: 'string',
+	apiKeys: 'string'
 }
 
 /*

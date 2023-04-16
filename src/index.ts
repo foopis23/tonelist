@@ -7,7 +7,7 @@ import { enqueue, join, leave, list, remove, skip } from './commands';
 
 program
 	.name('tonelist')
-	.version('0.0.1', '-v, --version', 'output the current version')
+	.version('2.0.0-alpha.2', '-v, --version', 'output the current version')
 	.addOption(new Option('--log-level <level>', 'set log level').choices(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']))
 	.option('--token <token>', 'set Discord bot token')
 	.option('--client-id <id>', 'set Discord client ID')
@@ -61,7 +61,7 @@ tonelist.init(initOptions, async () => {
 				commands
 			}
 		),
-		initAPI({ tonelist, commands })
+		initAPI({ tonelist, commands, apiKeys: (config.apiKeys) ? config.apiKeys.split(',') : [] })
 	])
 
 	tonelist.logger.info('Tonelist is ready!');

@@ -8,8 +8,13 @@ export const getQueueSchema = {
 		properties: {
 			guildId: { type: 'string' }
 		},
-		required: ['guildId']
-	} as const
+		required: ['guildId'],
+	} as const,
+	security: [
+		{
+			"apiKey": []
+		}
+	]
 };
 export type GetQueueSchema = {
 	Params: FromSchema<typeof getQueueSchema.params>

@@ -1,23 +1,32 @@
-import { SlashCommandBuilder } from "discord.js";
-import { CommandConfig } from "./types";
+import { ErrorTypes, TypedError } from "../types";
+import { APIParamLocation, CommandConfig } from "./types";
 
-const Remove: CommandConfig = {
-	data: new SlashCommandBuilder()
-		.setName('remove')
-		.setDescription('Remove a track from the queue')
-		.addIntegerOption(option => option.setName('index').setDescription('The index of the track to remove').setRequired(true)),
-	execute: async ({ interaction, tonelist }) => {
-		await interaction.deferReply();
+export const remove: CommandConfig = {
+	summary: 'Remove a song from the queue',
+	args: {
+		guildId: { type: 'string', required: true, command: false, api: APIParamLocation.PATH, summary: 'The id of the discord server' },
+		index: { type: 'number', required: true, command: true, api: APIParamLocation.BODY, summary: 'The index of the song to remove' }
+	},
+	handler: async (args) => {
+		const {
+			tonelist,
+			guildId
+		} = args;
 
-		const index = interaction.options.getInteger('index', true);
+		const index = args.index;
 
-		const { removedTrack } = await tonelist.remove({
-			guildId: interaction.guildId,
+		if (index !== 0 && !index) {
+			throw new TypedError(ErrorTypes.INVALID_INDEX);
+		}
+
+		const result = await tonelist.remove({
+			guildId,
 			index
 		});
 
-		await interaction.editReply(`Removed ${removedTrack.info.title}`);
+		return {
+			message: `Removed \`${result.removedTrack.info.title}\``,
+			...result
+		};
 	}
 }
-
-export default Remove;

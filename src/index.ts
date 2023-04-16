@@ -1,9 +1,9 @@
 import { program, Option } from 'commander';
 import getConfig from './config';
-import tonelist from './tonelist';
-import { InitOptions } from './types';
-import initCommands from './commands/init';
+import tonelist, { InitOptions } from './tonelist';
+import initInteractions from './interactions/init';
 import initAPI from './api/init';
+import { enqueue, join, leave, list, remove, skip } from './commands';
 
 program
 	.name('tonelist')
@@ -43,15 +43,25 @@ if (config.testGuilds) {
 	};
 }
 
+const commands = {
+	list,
+	enqueue,
+	remove,
+	join,
+	leave,
+	skip
+}
+
 tonelist.init(initOptions, async () => {
 	await Promise.all([
-		initCommands(
+		initInteractions(
 			tonelist,
 			{
-				...options?.commandOptions ?? {}
+				...options?.commandOptions ?? {},
+				commands
 			}
 		),
-		initAPI({ tonelist })
+		initAPI({ tonelist, commands })
 	])
 
 	tonelist.logger.info('Tonelist is ready!');

@@ -1,43 +1,49 @@
-import { SlashCommandBuilder } from "discord.js";
-import makePlainTextTable from "./helpers/table";
-import { CommandConfig } from "./types";
+import { formatDuration, formatPlainTextTable } from "../util/text";
+import { APIParamLocation, CommandConfig } from "./types";
 
-function formateDuration(durationMS: number) {
-	const duration = new Date(durationMS);
+export const list : CommandConfig = {
+	summary: 'List the current queue',
+	args: {
+		guildId: { type: 'string', required: true, command: false, api: APIParamLocation.PATH, summary: 'The id of the discord server' },
+	},
+	handler: async (args) => {
+		const {
+			tonelist,
+			guildId
+		} = args;
 
-	const hours = duration.getUTCHours().toString().padStart(2, '0');
-	const minutes = duration.getUTCMinutes().toString().padStart(2, '0');
-	const seconds = duration.getUTCSeconds().toString().padStart(2, '0');
+		const queue = (await tonelist.findOrCreateQueue(guildId));
+		let message = '';
+		if (queue.tracks.length === 0) {
+			message = 'Queue is empty';
+		} else {
+			const page = queue.tracks.slice(0, 15);
 
-	const hoursString = hours !== '00' ? `${hours}:` : '';
-	const minutesString = minutes !== '00' ? `${minutes}:` : '';
-	const secondsString = seconds !== '00' ? `${seconds}` : '';
+			const totalQueueDuration = queue.tracks.reduce((total, track) => total + track.info.length, 0);
 
-	return `${hoursString}${minutesString}${secondsString}`;
-}
+			const header = ['Index', 'Title', 'Duration'];
+			const footer = [`${page.length}/${queue.tracks.length}`, '', formatDuration(totalQueueDuration)]
+			const body = page.map((track, index) => [index.toString(), track.info.title, track.info.isStream ? 'LIVE' : formatDuration(track.info.length)]);
 
-const List: CommandConfig = {
-	data: new SlashCommandBuilder()
-		.setName('list')
-		.setDescription('List the queue'),
+			// this makes the table 80 characters wide (seems to be good for smaller screens and allows for more rows to be displayed at once)
+			const indexLength = Math.max(header[0].length, footer[0].length);
+			const durationLength = Math.max(header[2].length, footer[2].length);
+			const titleLength = 80 - indexLength - durationLength - header.length - 1 * 3 - 4;
 
-	execute: async ({ interaction, tonelist }) => {
-		await interaction.deferReply();
-
-		const queue = (await tonelist.findOrCreateQueue(interaction.guildId)).tracks;
-
-		if (queue.length === 0) {
-			await interaction.editReply('The queue is empty');
-			return;
+			const table = formatPlainTextTable([header, ...body, footer],
+				{
+					maxColumnWidths: [indexLength, titleLength, durationLength],
+					header: true,
+					footer: true,
+					topAndBottomBorder: true,
+				}
+			);
+			message = '```' + table + '```';
 		}
 
-		const headers = ['Index', 'Title', 'Duration'];
-		const body = queue.map((track, index) => [index.toString(), track.info.title, track.info.isStream ? 'LIVE' : formateDuration(track.info.length)]);
-
-		const table = makePlainTextTable([headers, ...body]);
-
-		await interaction.editReply('```' + table + '```');
+		return {
+			message,
+			...queue
+		}
 	}
-}
-
-export default List;
+};

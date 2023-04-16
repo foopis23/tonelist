@@ -1,33 +1,32 @@
-import { SlashCommandBuilder } from "discord.js";
-import { CommandConfig } from "./types";
+import { ErrorTypes, TypedError } from "../types";
+import { APIParamLocation, CommandConfig } from "./types";
 
-const Join: CommandConfig = {
-	data: new SlashCommandBuilder()
-		.setName('join')
-		.setDescription('Join the voice channel'),
-	execute: async ({ interaction, tonelist, voiceChannel, textChannel }) => {
-		await interaction.deferReply();
+export const join: CommandConfig = {
+	summary: 'Join a voice channel',
+	args: {
+		guildId: { type: 'string', required: true, command: false, api: APIParamLocation.PATH, summary: 'The id of the discord server' },
+		voiceChannelId: { type: 'string', required: true, command: false, api: APIParamLocation.BODY, summary: 'The id of the voice channel to join' },
+	},
+	handler: async (args) => {
+		const {
+			tonelist,
+			guildId
+		} = args;
 
-		const queue = (await tonelist.findOrCreateQueue(interaction.guildId)).tracks;
+		const voiceChannelId = args.voiceChannelId;
 
-		if (queue.length === 0) {
-			await interaction.editReply('The queue is empty');
-			return;
+		if (!voiceChannelId) {
+			throw new TypedError(ErrorTypes.INVALID_VOICE_CHANNEL_ID);
 		}
 
-		if (!voiceChannel) {
-			await interaction.editReply('You need to be in a voice channel');
-			return;
-		}
+		const result = await tonelist.join({
+			guildId,
+			voiceChannelId
+		});
 
-		await tonelist.join({
-			guildId: interaction.guildId,
-			voiceChannelId: voiceChannel.id,
-			textChannelId: textChannel.id
-		})
-
-		await interaction.editReply('Joined the voice channel');
+		return {
+			message: 'Joined the voice channel',
+			...result
+		};
 	}
 }
-
-export default Join;

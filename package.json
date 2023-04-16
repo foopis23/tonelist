@@ -16,7 +16,6 @@
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^5.54.0",
     "@typescript-eslint/parser": "^5.54.0",
-    "cross-env": "^7.0.3",
     "eslint": "^8.35.0",
     "json-schema-to-ts": "^2.7.2",
     "nodemon": "^2.0.20",
@@ -32,9 +31,8 @@
     "discord.js": "^14.7.1",
     "dotenv": "^16.0.3",
     "fastify": "^4.15.0",
-    "fastify-plugin": "^4.5.0",
-    "json-rpc-2.0": "^1.5.1",
     "lavaclient": "^4.1.1",
-    "pino": "^8.11.0"
+    "pino": "^8.11.0",
+    "cross-env": "^7.0.3"
   }
 }

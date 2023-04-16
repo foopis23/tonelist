@@ -1,24 +1,23 @@
-import { SlashCommandBuilder } from "discord.js";
-import { CommandConfig } from "./types";
+import { APIParamLocation, CommandConfig } from "./types";
 
-const Leave: CommandConfig = {
-	data: new SlashCommandBuilder()
-		.setName('leave')
-		.setDescription('Leave the voice channel'),
-	execute: async ({ interaction, tonelist, voiceChannel }) => {
-		await interaction.deferReply();
+export const leave: CommandConfig = {
+	summary: 'Leave the voice channel',
+	args: {
+		guildId: { type: 'string', required: true, command: false, api: APIParamLocation.PATH, summary: 'The id of the discord server' },
+	},
+	handler: async (args) => {
+		const {
+			tonelist,
+			guildId
+		} = args;
 
-		if (!voiceChannel) {
-			await interaction.editReply('You need to be in a voice channel');
-			return;
-		}
+		const result = await tonelist.leave({
+			guildId
+		});
 
-		await tonelist.leave({
-			guildId: interaction.guildId
-		})
-
-		await interaction.editReply('Left the voice channel');
+		return {
+			message: 'Left the voice channel',
+			...result
+		};
 	}
 }
-
-export default Leave;

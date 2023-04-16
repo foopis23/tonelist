@@ -1,9 +1,50 @@
-import { Channel, Client, GatewayDispatchEvents, GatewayIntentBits, Guild, TextChannel } from "discord.js";
-import pino, { Logger } from "pino";
-import { Node } from "lavaclient";
-import { EnqueueArguments, InitOptions, JoinArguments, LeaveArguments, Queue, QueueArguments, RemoveArguments, SkipArguments, TonelistError, TonelistErrorType } from "./types";
+import { Channel, Client, ClientOptions, GatewayDispatchEvents, GatewayIntentBits, Guild, TextChannel } from "discord.js";
+import pino, { Logger, LoggerOptions } from "pino";
+import { ConnectionInfo, Node } from "lavaclient";
+import { Queue, TypedError, ErrorTypes } from "./types";
 import { MemoryStore, Store } from "@foopis23/ts-store";
-import { getItem } from "./util";
+import { getItem } from "./util/discord-cache";
+import { InitCommandOptions } from "./interactions/types";
+
+export type JoinArguments = {
+	guildId: string;
+	textChannelId?: string;
+	voiceChannelId: string;
+}
+
+export type LeaveArguments = {
+	guildId: string;
+}
+
+export type EnqueueArguments = {
+	guildId: string;
+	voiceChannelId: string;
+	textChannelId?: string;
+	query: string;
+}
+
+export type RemoveArguments = {
+	guildId: string;
+	index: number;
+}
+
+export type QueueArguments = {
+	guildId: string;
+}
+
+export type SkipArguments = {
+	guildId: string;
+}
+
+export type InitOptions = {
+	loggerOptions?: LoggerOptions;
+	clientOptions?: Partial<ClientOptions>;
+	commandOptions?: Partial<InitCommandOptions>;
+	token: string;
+	clientId: string;
+	lavaConnectionInfo: ConnectionInfo;
+	store?: Store<Queue>;
+}
 
 export class Tonelist {
 	logger: Logger;
@@ -50,7 +91,7 @@ export class Tonelist {
 	async findQueue(guildId: string) {
 		const queue = await this.queues.get(guildId);
 		if (!queue || !queue.value) {
-			throw new Error('Queue not found');
+			throw new TypedError(ErrorTypes.QUEUE_NOT_FOUND);
 		}
 		return queue.value;
 	}
@@ -70,7 +111,7 @@ export class Tonelist {
 	async getGuild(guildId: string) {
 		const guild = await getItem<Guild>(this.client.guilds, guildId);
 		if (!guild) {
-			throw new Error('Guild not found');
+			throw new TypedError(ErrorTypes.GUILD_NOT_FOUND);
 		}
 		return guild;
 	}
@@ -80,7 +121,7 @@ export class Tonelist {
 		const channel = await getItem<Channel>(guild.channels, channelId);
 
 		if (!channel) {
-			throw new Error('Channel not found');
+			throw new TypedError(ErrorTypes.CHANNEL_NOT_FOUND);
 		}
 
 		return channel;
@@ -134,7 +175,7 @@ export class Tonelist {
 		const player = this.findOrCreatePlayer(guildId);
 
 		if (player.connected) {
-			throw new TonelistError('Already connected to a voice channel', TonelistErrorType.ALREADY_CONNECTED);
+			throw new TypedError(ErrorTypes.ALREADY_CONNECTED);
 		}
 
 		const queue = await this.findOrCreateQueue(guildId);
@@ -163,7 +204,7 @@ export class Tonelist {
 		const player = this.node.players.get(guildId);
 
 		if (!player.connected) {
-			throw new TonelistError('Not connected to a voice channel', TonelistErrorType.NOT_CONNECTED);
+			throw new TypedError(ErrorTypes.NOT_CONNECTED);
 		}
 
 		const voiceChannel = await this.getChannel(guildId, player.channelId);
@@ -212,13 +253,13 @@ export class Tonelist {
 		const { guildId, index } = args;
 
 		if (index == 0) {
-			throw new TonelistError('Cannot remove the currently playing track', TonelistErrorType.CANNOT_REMOVE_CURRENT);
+			throw new TypedError(ErrorTypes.CANNOT_REMOVE_CURRENT);
 		}
 
 		const queue = await this.findOrCreateQueue(guildId);
 
-		if (index < 0 || index >= queue.tracks.length) {
-			throw new TonelistError('Index out of bounds', TonelistErrorType.INDEX_OUT_OF_BOUNDS);
+		if (index < 1 || index >= queue.tracks.length) {
+			throw new TypedError(ErrorTypes.INVALID_INDEX);
 		}
 
 		const removedTracks = queue.tracks.splice(index, 1);

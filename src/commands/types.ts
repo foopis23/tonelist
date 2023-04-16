@@ -1,27 +1,55 @@
-import { APIInteractionDataResolvedChannel, APIInteractionDataResolvedGuildMember, APIRole, Attachment, ChatInputCommandInteraction, GuildBasedChannel, GuildMember, GuildTextBasedChannel, Role, SlashCommandBuilder, User, VoiceBasedChannel } from "discord.js"
+import { APIUser, ChatInputCommandInteraction, User } from "discord.js";
 import { Tonelist } from "../tonelist";
+import { FastifyRequest } from "fastify";
 
-export type InteractionChannel = NonNullable<APIInteractionDataResolvedChannel | GuildBasedChannel>;
-export type InteractionRole = NonNullable<Role | APIRole>;
-export type InteractionMentionable = NonNullable<User | InteractionRole | APIRole | GuildMember | APIInteractionDataResolvedGuildMember>;
-
-export type CommandArguments = {
-	[key: string]: string | number | boolean | User | InteractionChannel | InteractionRole | InteractionMentionable | Attachment;
+export enum APIParamLocation {
+	QUERY = 'query',
+	PATH = 'path',
+	BODY = 'body',
 }
 
+export type BaseArgumentConfig = {
+	type: 'string' | 'number' | 'boolean';
+	required?: boolean;
+	command?: boolean;
+	api?: APIParamLocation | false;
+	summary: string;
+}
+
+export type ArrayArgumentConfig = BaseArgumentConfig & {
+	type: 'array';
+	items: BaseArgumentConfig[];
+}
+
+export type ObjectArgumentConfig = BaseArgumentConfig & {
+	type: 'object';
+	properties: {
+		[key: string]: BaseArgumentConfig;
+	}
+}
+
+export type CommandArgumentConfig = BaseArgumentConfig | ArrayArgumentConfig | ObjectArgumentConfig;
+
 export type CommandContext = {
-	interaction: ChatInputCommandInteraction;
+	guildId: string;
 	tonelist: Tonelist;
-	args: CommandArguments;
-	voiceChannel?: VoiceBasedChannel | undefined;
-	textChannel: GuildTextBasedChannel
+	user?: User | APIUser;
+	voiceChannelId?: string;
+	textChannelId?: string;
+	interaction?: ChatInputCommandInteraction;
+	request?: FastifyRequest;
+	query?: string;
+	index?: number;
+	[key: string]: unknown;
 }
 
 export type CommandConfig = {
-	data: SlashCommandBuilder | Omit<SlashCommandBuilder, "addSubcommand" | "addSubcommandGroup">,
-	execute: (context: CommandContext) => Promise<void>
-}
-
-export type InitCommandOptions = {
-	testGuilds?: string[];
+	summary: string;
+	args: {
+		[key: string]: CommandArgumentConfig
+	},
+	handler: (args: CommandContext) => Promise<{
+		message?: string;
+		[key: string]: unknown;
+	}>;
 }

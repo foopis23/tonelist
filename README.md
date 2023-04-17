@@ -69,7 +69,9 @@ services:
       BASE_URL: http://localhost:3000
       API_KEYS: insert,created,api,keys,seperated,by,commas
     restart: unless-stopped
-  
+    ports:
+      - "3000:3000"
+
   lavalink:
     image: fredboat/lavalink:latest
     volumes:

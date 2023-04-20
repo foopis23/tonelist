@@ -45,6 +45,7 @@ function buildSchema(command: CommandConfig) {
 
 	const schema = {
 		summary,
+		tags: ['Guild Commands (RPC)'],
 		params: {
 			type: 'object',
 			properties: paramProperties,

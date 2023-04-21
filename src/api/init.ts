@@ -8,6 +8,7 @@ import { CommandConfig } from '../commands/types';
 import fastifyApiKeys from './fastify-api-keys';
 import { getUsersAvailablePlayers, getUsersAvailablePlayersHandler } from './users';
 import fastifyDiscordTokenAuth from './fastify-discord-token-auth';
+import fastifyRateLimit from '@fastify/rate-limit';
 
 declare module 'fastify' {
 	interface FastifyRequest {
@@ -15,7 +16,16 @@ declare module 'fastify' {
 	}
 }
 
-async function initAPI({ tonelist, commands, apiKeys, baseURL }: { tonelist: Tonelist, commands: Record<string, CommandConfig>, apiKeys: string[], baseURL: string }) {
+type InitAPIOptions = {
+	tonelist: Tonelist,
+	commands: Record<string, CommandConfig>,
+	apiKeys: string[],
+	baseURL: string,
+	maxRequestsPerMinute?: number
+}
+
+
+async function initAPI({ tonelist, commands, apiKeys, baseURL, maxRequestsPerMinute = 1000 }: InitAPIOptions) {
 	const logger = tonelist.logger.child({ module: 'api' });
 	const fastify = Fastify({
 		logger: logger,
@@ -68,6 +78,13 @@ async function initAPI({ tonelist, commands, apiKeys, baseURL }: { tonelist: Ton
 	await fastify.register(fastifyDiscordTokenAuth);
 
 	await fastify.register(async (fastify) => {
+		fastify.register(fastifyRateLimit, {
+			global: true,
+			max: maxRequestsPerMinute,
+			timeWindow: 1000 * 60,
+			ban: 5
+		});
+
 		fastify.addHook('preHandler', fastify.fastifyApiKeys.requiresAuthentication);
 
 		// register guild routes

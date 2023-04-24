@@ -10,7 +10,6 @@ type Config = {
 	clientId: string;
 	testGuilds?: string;
 	logLevel?: string;
-	apiKeys?: string;
 	baseUrl?: string;
 	apiMaxRequestsPerMinute?: number;
 }
@@ -25,7 +24,6 @@ const REQUIRED_OPTIONS = [
 
 const OPTIONS = [
 	...REQUIRED_OPTIONS,
-	'apiKeys',
 	'baseUrl',
 	'apiMaxRequestsPerMinute',
 ]
@@ -37,7 +35,6 @@ const OPTION_TYPES: Record<string, string> = {
 	lavaPort: 'number',
 	lavaPassword: 'string',
 	testGuilds: 'string',
-	apiKeys: 'string',
 	baseUrl: 'string',
 	apiMaxRequestsPerMinute: 'number',
 }

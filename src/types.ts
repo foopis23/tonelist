@@ -1,9 +1,29 @@
 import { APIUser, Channel, DMChannel, TextChannel, VoiceChannel } from "discord.js";
 import { Track } from "@lavaclient/types/v3";
+import { thumbnail } from "ytdl-core";
+
+export type TrackWithThumbnail = Track & {
+	thumbnails?: thumbnail[];
+}
+
+export type TrackWithEnqueuedBy = TrackWithThumbnail & {
+	enqueuedBy?: {
+		id: string;
+		username: string;
+		avatar: string;
+	};
+}
+
+export type TrackWithPosition = TrackWithEnqueuedBy & {
+	position?: number;
+	accuratePosition?: number;
+}
+
+export type TonelistTrack = TrackWithThumbnail & TrackWithEnqueuedBy & TrackWithPosition;
 
 export type Queue = {
 	textChannel?: string;
-	tracks: Track[];
+	tracks: TonelistTrack[];
 }
 
 export enum ErrorTypes {
@@ -20,6 +40,8 @@ export enum ErrorTypes {
 	INVALID_QUERY = 'Invalid query',
 	INVALID_INDEX = 'Index must be between 0 and the length of the queue',
 	INVALID_GUILD_MEMBER = 'Invalid guild member :woa:',
+	NO_MATCHES = 'Failed to find any results for that query',
+	LOAD_FAILED = 'Failed to load tracks for that query'
 }
 
 export class TypedError extends Error {

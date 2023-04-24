@@ -1,5 +1,5 @@
 import { FastifyPluginAsync, FastifyPluginOptions } from "fastify";
-import { APIParamLocation, CommandConfig, CommandArgumentConfig } from "../commands/types";
+import { APIParamLocation, CommandConfig, CommandArgumentConfig } from "../../commands/types";
 
 const isPathArg = ([, arg]: [string, CommandArgumentConfig]) => arg.api === APIParamLocation.PATH;
 const isBodyArg = ([, arg]: [string, CommandArgumentConfig]) => arg.api === APIParamLocation.BODY;
@@ -58,7 +58,7 @@ function buildSchema(command: CommandConfig) {
 		},
 		security: [
 			{
-				apiKey: []
+				"bearerAuth": []
 			}
 		],
 		response: {
@@ -107,7 +107,7 @@ function buildSchema(command: CommandConfig) {
 	return schema;
 }
 
-const commands: FastifyPluginAsync<FastifyPluginOptions & { commands: Record<string, CommandConfig> }> = async function (fastify, opts) {
+export const commands: FastifyPluginAsync<FastifyPluginOptions & { commands: Record<string, CommandConfig> }> = async function (fastify, opts) {
 	const { commands } = opts;
 
 	for (const [name, command] of Object.entries(commands)) {
@@ -142,5 +142,3 @@ const commands: FastifyPluginAsync<FastifyPluginOptions & { commands: Record<str
 		});
 	}
 }
-
-export default commands;

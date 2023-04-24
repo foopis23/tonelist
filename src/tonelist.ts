@@ -1,10 +1,11 @@
 import { Channel, Client, ClientOptions, GatewayDispatchEvents, GatewayIntentBits, Guild, TextChannel } from "discord.js";
 import pino, { Logger, LoggerOptions } from "pino";
 import { ConnectionInfo, Node } from "lavaclient";
-import { Queue, TypedError, ErrorTypes } from "./types";
+import { Queue, TypedError, ErrorTypes, TonelistTrack } from "./types";
 import { MemoryStore, Store } from "@foopis23/ts-store";
 import { getItem } from "./util/discord-cache";
 import { InitCommandOptions } from "./interactions/types";
+import ytdl from "ytdl-core";
 
 export type JoinArguments = {
 	guildId: string;
@@ -51,6 +52,7 @@ export class Tonelist {
 	client: Client;
 	node: Node;
 	queues: Store<Queue>
+	listeners: Store<{ id: string }>
 
 	async init(options: InitOptions, ready?: (client: Client) => void) {
 		this.logger = pino({
@@ -83,6 +85,7 @@ export class Tonelist {
 		this.client.on('ready', onReady);
 
 		this.queues = options.store ?? new MemoryStore<Queue>();
+		this.listeners = new MemoryStore<{ id: string }>();
 
 		this.client.login(options.token);
 		return this;
@@ -127,6 +130,20 @@ export class Tonelist {
 		return channel;
 	}
 
+	getCurrentTrack(guildId: string): TonelistTrack | null {
+		const player = this.node.players.get(guildId);
+
+		if (!player?.track) {
+			return null;
+		}
+
+		return {
+			track: player.track,
+			info: player.trackData,
+			accuratePosition: player.accuratePosition,
+		};
+	}
+
 	private createPlayer(guildId: string) {
 		const player = this.node.createPlayer(guildId);
 		player.on('trackEnd', async () => {
@@ -138,24 +155,25 @@ export class Tonelist {
 
 	private async playNext(guildId: string) {
 		const queue = await this.findOrCreateQueue(guildId);
-		queue.tracks.shift();
-
 		const player = this.node.players.get(guildId);
 
 		if (queue.tracks.length < 1) {
 			player.disconnect();
 			this.node.destroyPlayer(player.guildId);
 			await this.queues.destroy(guildId);
-		} else {
-			await this.queues.set(guildId, queue);
-			await player.play(queue.tracks[0].track);
+			return;
+		}
 
-			if (queue.textChannel) {
-				const channel = await this.getChannel(guildId, queue.textChannel);
+		const trackToPlay = queue.tracks.shift();
 
-				if (channel.isTextBased()) {
-					await (channel as TextChannel).send(`Now playing \`${queue.tracks[0].info.title}\``);
-				}
+		await this.queues.set(guildId, queue);
+		await player.play(trackToPlay.track);
+
+		if (queue.textChannel) {
+			const channel = await this.getChannel(guildId, queue.textChannel);
+
+			if (channel.isTextBased()) {
+				await (channel as TextChannel).send(`Now playing \`${trackToPlay.info.title}\``);
 			}
 		}
 	}
@@ -224,12 +242,35 @@ export class Tonelist {
 		const player = this.findOrCreatePlayer(guildId);
 		const tracks = await this.node.rest.loadTracks(query);
 
+		if (tracks.loadType === "NO_MATCHES") {
+			throw new TypedError(ErrorTypes.NO_MATCHES);
+		}
+
+		if (tracks.loadType === "LOAD_FAILED") {
+			throw new TypedError(ErrorTypes.LOAD_FAILED);
+		}
+
+		const tracksWithThumbnails: TonelistTrack[] = await Promise.all(
+			tracks.tracks.map(async track => {
+				if (!track.info.uri || !ytdl.validateURL(track.info.uri)) {
+					return track;
+				}
+
+				const info = await ytdl.getInfo(track.info.uri);
+
+				return {
+					...track,
+					thumbnail: info.videoDetails.thumbnails
+				}
+			})
+		);
+
 		if (!player?.connected) {
 			player.connect(voiceChannelId, { deafened: true });
 		}
 
 		const queue = await this.findOrCreateQueue(guildId);
-		queue.tracks.push(...tracks.tracks);
+		queue.tracks.push(...tracksWithThumbnails);
 
 		if (!queue.textChannel && args.textChannelId) {
 			queue.textChannel = args.textChannelId;
@@ -239,26 +280,23 @@ export class Tonelist {
 
 		const started = player.playing || player.paused;
 		if (!started) {
-			await player.play(queue.tracks[0].track);
+			await this.playNext(guildId)
 		}
 
 		return {
 			queue,
 			guildID: guildId,
-			voiceChannelId
+			voiceChannelId,
+			loadType: tracks.loadType,
 		}
 	}
 
 	async remove(args: RemoveArguments) {
 		const { guildId, index } = args;
 
-		if (index == 0) {
-			throw new TypedError(ErrorTypes.CANNOT_REMOVE_CURRENT);
-		}
-
 		const queue = await this.findOrCreateQueue(guildId);
 
-		if (index < 1 || index >= queue.tracks.length) {
+		if (index < 0 || index >= queue.tracks.length) {
 			throw new TypedError(ErrorTypes.INVALID_INDEX);
 		}
 

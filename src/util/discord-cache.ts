@@ -14,5 +14,5 @@ export async function getItem<V extends ReturnTypes = ReturnTypes>(manager: Mana
 		return item as V;
 	}
 
-	return await manager.fetch(id) as V;
+	return await manager.fetch(id) as V | null;
 }

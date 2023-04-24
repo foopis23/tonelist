@@ -2,13 +2,12 @@ import fastifySwaggerUI from '@fastify/swagger-ui';
 import Fastify from 'fastify';
 import { Tonelist } from '../tonelist';
 import fastifySwagger from '@fastify/swagger';
-import { GetQueueSchema, getQueueHandler, getQueueSchema } from './queues';
-import { default as commandPlugin } from './commands';
 import { CommandConfig } from '../commands/types';
-import fastifyApiKeys from './fastify-api-keys';
-import { getUsersAvailablePlayers, getUsersAvailablePlayersHandler } from './users';
-import fastifyDiscordTokenAuth from './fastify-discord-token-auth';
 import fastifyRateLimit from '@fastify/rate-limit';
+import { guildRoutes } from './guilds';
+import { userRoutes } from './users';
+import fastifyDiscordTokenAuth from './auth/fastify-discord-token-auth';
+import { trackRoutes } from './tracks';
 
 declare module 'fastify' {
 	interface FastifyRequest {
@@ -19,18 +18,18 @@ declare module 'fastify' {
 type InitAPIOptions = {
 	tonelist: Tonelist,
 	commands: Record<string, CommandConfig>,
-	apiKeys: string[],
 	baseURL: string,
 	maxRequestsPerMinute?: number
 }
 
 
-async function initAPI({ tonelist, commands, apiKeys, baseURL, maxRequestsPerMinute = 1000 }: InitAPIOptions) {
+async function initAPI({ tonelist, commands, baseURL, maxRequestsPerMinute = 1000 }: InitAPIOptions) {
 	const logger = tonelist.logger.child({ module: 'api' });
 	const fastify = Fastify({
 		logger: logger,
 	});
 
+	// add tonelist to request
 	fastify.decorateRequest('tonelist', null);
 	fastify.addHook('onRequest', (request, _, done) => {
 		request.tonelist = tonelist;
@@ -52,11 +51,6 @@ async function initAPI({ tonelist, commands, apiKeys, baseURL, maxRequestsPerMin
 			],
 			components: {
 				securitySchemes: {
-					apiKey: {
-						type: 'apiKey',
-						name: 'x-api-key',
-						in: 'header'
-					},
 					bearerAuth: {
 						type: 'http',
 						scheme: 'bearer',
@@ -69,15 +63,12 @@ async function initAPI({ tonelist, commands, apiKeys, baseURL, maxRequestsPerMin
 		routePrefix: '/documentation'
 	});
 
-	// setup api keys auth
-	await fastify.register(fastifyApiKeys, {
-		keys: apiKeys
-	});
-
 	// setup token auth
 	await fastify.register(fastifyDiscordTokenAuth);
 
+	// rate limited routes and access controlled routes
 	await fastify.register(async (fastify) => {
+		// rate limit all routes in this context
 		fastify.register(fastifyRateLimit, {
 			global: true,
 			max: maxRequestsPerMinute,
@@ -85,24 +76,29 @@ async function initAPI({ tonelist, commands, apiKeys, baseURL, maxRequestsPerMin
 			ban: 5
 		});
 
-		fastify.addHook('preHandler', fastify.fastifyApiKeys.requiresAuthentication);
+		// require authentication for all routes in this context
+		fastify.addHook('preHandler', fastify.discord.requiresAuthentication);
 
 		// register guild routes
-		await fastify.register(async (fastify) => {
-			fastify.get<GetQueueSchema>('/queue', {
-				schema: getQueueSchema
-			}, getQueueHandler);
+		await fastify.register(guildRoutes, { prefix: '/guilds', commands });
 
-			await fastify.register(commandPlugin, { prefix: '/commands', commands });
-		}, { prefix: '/guilds/:guildId' });
+		// user routes
+		await fastify.register(userRoutes, { prefix: '/users' });
+	});
 
-		await fastify.register(async (fastify) => {
-			fastify.addHook('preHandler', fastify.discord.requiresAuthentication);
+	// add endpoint for getting track thumbnails
+	await fastify.register(async (fastify) => {
+		// rate limit all routes in this context
+		fastify.register(fastifyRateLimit, {
+			global: false,
+			max: maxRequestsPerMinute,
+			timeWindow: 2000 * 60,
+			ban: 5
+		});
 
-			fastify.get('/available-players', {
-				schema: getUsersAvailablePlayers
-			}, getUsersAvailablePlayersHandler);
-		}, { prefix: '/users/@me' });
+		await fastify.register(trackRoutes, {
+			prefix: '/tracks'
+		});
 	});
 
 

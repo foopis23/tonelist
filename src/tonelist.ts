@@ -131,9 +131,13 @@ export class Tonelist {
 	}
 
 	getCurrentTrack(guildId: string): TonelistTrack | null {
+		if (!this.node.players.has(guildId)) {
+			return null;
+		}
+		
 		const player = this.node.players.get(guildId);
 
-		if (!player?.track) {
+		if (!player || !player.track) {
 			return null;
 		}
 

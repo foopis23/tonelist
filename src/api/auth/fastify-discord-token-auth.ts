@@ -53,18 +53,19 @@ export default fp(async function (fastify) {
 			return;
 		}
 
-		const userResponse = await fetch('https://discord.com/api/users/@me', {
-			headers: {
-				Authorization: `Bearer ${token}`
-			}
-		});
+		try {
+			const user = await request.fetch<APIUser>('https://discord.com/api/users/@me', {
+				request: {
+					headers: {
+						Authorization: `Bearer ${token}`
+					}
+				}
+			});
 
-		if (!userResponse.ok) {
-			return;
+			request.discord.user = user;
+			request.discord.token = token;
+		} catch (e) {
+			// do nothing
 		}
-
-		const user = await userResponse.json() as APIUser;
-		request.discord.user = user;
-		request.discord.token = token;
 	});
 });

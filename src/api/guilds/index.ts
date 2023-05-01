@@ -6,6 +6,7 @@ import { errorSchema, queueSchema, trackSchema, userSchema } from "../schema-com
 import { getItem } from "../../util/discord-cache";
 import { APIGuild, Channel, Guild } from "discord.js";
 import { isVoiceBasedChannel } from "../../types";
+import { FetchError } from "../../util/cached-fetch";
 
 const guildParams = {
 	type: 'object',
@@ -69,11 +70,19 @@ const getCurrentTrackSchema = {
 	],
 	response: {
 		200: {
-			type: 'object',
-			properties: {
-				...trackSchema.properties,
-				accuratePosition: { type: 'number' }
-			}
+			oneOf: [
+				{
+					type: 'object',
+					properties: {
+						...trackSchema.properties,
+						accuratePosition: { type: 'number' }
+					}
+				},
+				{
+					type: 'object',
+					properties: {}
+				}
+			]
 		},
 		401: errorSchema,
 		403: errorSchema,
@@ -87,39 +96,57 @@ type GetCurrentTrackSchema = {
 export const guildRoutes: FastifyPluginAsync<FastifyPluginOptions & { commands: Record<string, CommandConfig> }> = async function (fastify, opts) {
 	// user must be in guild access control
 	fastify.addHook<{ Params: FromSchema<typeof guildParams> }>('preHandler', async (request, reply) => {
-		const userGuildsResponse = await fetch('https://discord.com/api/users/@me/guilds', {
-			headers: {
-				Authorization: `Bearer ${request.discord.token}`
-			}
-		});
+		try {
+			try {
+				const userGuilds = await request.fetch<APIGuild[]>('https://discord.com/api/users/@me/guilds', {
+					request: {
+						headers: {
+							Authorization: `Bearer ${request.discord.token}`
+						}
+					}
+				});
 
-		if (!userGuildsResponse.ok) {
-			switch (userGuildsResponse.status) {
-				case 401:
-					reply.status(401);
-					throw new Error('Failed to fetch guilds');
-				case 403:
+				if (!userGuilds.some((guild: { id: string }) => guild.id === request.params.guildId)) {
 					reply.status(403);
-					throw new Error('Failed to fetch guilds');
-				default:
-					reply.status(500);
-					throw new Error('Failed to fetch guilds');
+					throw new Error('User is not in guild');
+				}
+			} catch (e) {
+				if (e instanceof FetchError) {
+					switch (e.response.status) {
+						case 401:
+						case 403:
+						case 429:
+							reply.status(e.response.status);
+					}
+				}
+				throw new Error('Failed to fetch guilds');
 			}
-		}
-
-		// TODO: type validate this?
-		const userGuilds = await userGuildsResponse.json() as APIGuild[];
-
-		if (!userGuilds.some((guild: { id: string }) => guild.id === request.params.guildId)) {
-			reply.status(403);
-			throw new Error('User is not in guild');
+		} catch (err) {
+			if (err instanceof FetchError) {
+				switch (err.response.status) {
+					case 401:
+					case 403:
+					case 429:
+						reply.status(err.response.status);
+						throw new Error('Failed to fetch guilds');
+					default:
+						reply.status(500);
+						throw new Error('Failed to fetch guilds');
+				}
+			}
 		}
 	});
 
 	fastify.get<GetQueueSchema>('/:guildId/queue', {
 		schema: getQueueSchema
 	}, async (request) => {
-		return await request.tonelist.findQueue(request.params.guildId);
+		try {
+			return await request.tonelist.findQueue(request.params.guildId);
+		} catch (e) {
+			return {
+				tracks: [],
+			}
+		}
 	});
 
 	fastify.get<GetListenersSchema>('/:guildId/listeners', {
@@ -146,7 +173,7 @@ export const guildRoutes: FastifyPluginAsync<FastifyPluginOptions & { commands: 
 			}));
 	});
 
-	fastify.get<GetCurrentTrackSchema>('/:guildId/currentTrack', {
+	fastify.get<GetCurrentTrackSchema>('/:guildId/current-track', {
 		schema: getCurrentTrackSchema
 	}, async (request) => {
 		return request.tonelist.getCurrentTrack(request.params.guildId);

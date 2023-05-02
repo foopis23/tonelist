@@ -2,7 +2,7 @@ import { program, Option } from 'commander';
 import getConfig from './config';
 import tonelist, { InitOptions } from './tonelist';
 import initInteractions from './interactions/init';
-import initAPI from './api/init';
+import initHTTPServer from './http/init';
 import { enqueue, join, leave, list, remove, skip } from './commands';
 
 program
@@ -61,7 +61,7 @@ tonelist.init(initOptions, async () => {
 				commands
 			}
 		),
-		initAPI({
+		initHTTPServer({
 			tonelist,
 			commands,
 			baseURL: config.baseUrl ?? 'http://localhost:3000',

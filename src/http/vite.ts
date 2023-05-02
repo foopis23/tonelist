@@ -24,7 +24,7 @@ const DEFAULT_CONFIG: FastifyViteConfig = {
 };
 
 function isStaticFilePath(path: string) {
-	return path.match(/(\.\w+$)|@vite|@id|@react-refresh/);
+	return path.match(/(\.\w+$)|@vite|@id|@react-refresh|@fs/);
 }
 
 const fastifyVite: FastifyPluginAsync<FastifyViteConfig> = async (fastify, opts = DEFAULT_CONFIG) => {
@@ -52,7 +52,8 @@ const fastifyVite: FastifyPluginAsync<FastifyViteConfig> = async (fastify, opts 
 	const viteConfig = await Vite.resolveConfig({
 		root: config.root,
 	}, (config.dev) ? 'serve' : 'build');
-	const viteHost = `${config.viteServerSecure ? 'https' : 'http'}://${viteConfig.server.host ?? 'localhost'}:${viteConfig.server.port}`;
+	const viteHost = `${config.viteServerSecure ? 'https' : 'http'}://localhost:${config.vitePort}`;
+	console.log(viteHost)
 
 	// serve static files
 	if (!config.dev) {
@@ -77,7 +78,7 @@ const fastifyVite: FastifyPluginAsync<FastifyViteConfig> = async (fastify, opts 
 						)
 					}
 
-					return reply.send(viteResponse.body);
+					return reply.send(await viteResponse.text());
 				})
 			} else {
 				next();
@@ -88,10 +89,10 @@ const fastifyVite: FastifyPluginAsync<FastifyViteConfig> = async (fastify, opts 
 	// serve index.html
 	if (config.dev) {
 		const handler  = (_: FastifyRequest, reply: FastifyReply) => {
-			fetch(new URL('index.html', viteHost)).then(async (viteResponse) => {
+			fetch(new URL(viteHost)).then(async (viteResponse) => {
 				reply.status(viteResponse.status);
 				viteResponse.headers.forEach((value, key) => reply.header(key, value));
-				reply.send(viteResponse.body);
+				reply.send(await viteResponse.text());
 			});
 		}
 		fastify.all('/', handler)

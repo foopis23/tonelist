@@ -1,23 +1,17 @@
 import Fastify from 'fastify';
 import { Tonelist } from '../tonelist';
-import { CommandConfig } from '../commands/types';
 import fastifyVite from './vite';
 import { resolve } from 'path';
 
 declare module 'fastify' {
 	interface FastifyRequest {
 		tonelist: Tonelist;
-		// fetch: CachedFetchClient['fetch'];
 	}
 }
 
 type InitAPIOptions = {
 	tonelist: Tonelist,
-	commands: Record<string, CommandConfig>,
-	baseURL: string,
-	maxRequestsPerMinute?: number
 }
-
 
 async function initHTTPServer({ tonelist }: InitAPIOptions) {
 	const logger = tonelist.logger.child({ module: 'api' });
@@ -39,7 +33,8 @@ async function initHTTPServer({ tonelist }: InitAPIOptions) {
 	});
 
 	fastify.register(fastifyVite, {
-		root: resolve(__dirname, '../client')
+		root: resolve(__dirname, '../client'),
+		printViteDevServerHost: true,
 	})
 
 	try {

@@ -3,12 +3,15 @@
   import { client } from "./trpc";
 
   const me = ref<any>(undefined);
-  client.users.getMe.query().then((user) => {
-    me.value = user;
-  }).catch((err) => {
-    console.log(err);
-    me.value = null;
-  });
+  client.users.getUser
+    .query({ id: "@me" })
+    .then((user) => {
+      me.value = user;
+    })
+    .catch((err) => {
+      console.log(err);
+      me.value = null;
+    });
 </script>
 
 <template>
@@ -21,4 +24,3 @@
     </div>
   </div>
 </template>
-

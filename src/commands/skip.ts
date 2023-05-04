@@ -16,7 +16,7 @@ export const skip: CommandConfig = {
 		});
 
 		return {
-			message: `Skipped \`${result.skipped.title}\``,
+			message: `Skipped \`${result.skipped?.title}\``,
 			...result
 		};
 	}

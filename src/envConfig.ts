@@ -17,6 +17,8 @@ const envSchema = zod.object({
 	DISCORD_CLIENT_ID: zod.string().nonempty(),
 	DISCORD_CLIENT_SECRET: zod.string().nonempty(),
 	BOT_TEST_GUILDS: zod.string().default('').transform((val) => (val.length) ? val.split(',') : []),
+	AUTH_SECRET: zod.string().min(32).nonempty(),
+	DATABASE_URL: zod.string().url().nonempty(),
 });
 export type EnvConfig = zod.infer<typeof envSchema>;
 

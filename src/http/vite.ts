@@ -6,12 +6,12 @@ import FastifyStatic from "@fastify/static";
 import { createReadStream } from 'fs';
 
 interface FastifyViteConfig extends FastifyPluginOptions {
-	dev?: boolean;
-	vitePort?: number;
-	viteServerSecure?: boolean;
-	printViteDevServerHost?: boolean;
-	root?: string;
-	redirectNotFoundToIndex?: boolean;
+	dev: boolean;
+	vitePort: number;
+	viteServerSecure: boolean;
+	printViteDevServerHost: boolean;
+	root: string;
+	redirectNotFoundToIndex: boolean;
 }
 
 const DEFAULT_CONFIG: FastifyViteConfig = {
@@ -27,9 +27,9 @@ function isStaticFilePath(path: string) {
 	return path.match(/(\.\w+$)|@vite|@id|@react-refresh|@fs/);
 }
 
-const fastifyVite: FastifyPluginAsync<FastifyViteConfig> = async (fastify, opts = DEFAULT_CONFIG) => {
+const fastifyVite: FastifyPluginAsync<Partial<FastifyViteConfig>> = async (fastify, opts = DEFAULT_CONFIG) => {
 	// setup config with defaults
-	const config = { ...DEFAULT_CONFIG, ...opts };
+	const config: FastifyViteConfig = { ...DEFAULT_CONFIG, ...opts };
 
 	// if is development, start dev server
 	if (config.dev) {

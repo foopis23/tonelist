@@ -23,14 +23,14 @@ export const list: CommandConfig = {
 			const displayCount = (currentTrack != null ? 1 : 0) + page.length;
 			const totalCount = (currentTrack != null ? 1 : 0) + queue.tracks.length;
 
-			const totalQueueDuration = queue.tracks.reduce((total, track) => total + track.info.length, 0);
+			const totalQueueDuration = queue.tracks.reduce((total, track) => total + (track.info?.length ?? 0), 0);
 
 			const header = ['Index', 'Title', 'Duration'];
 			const footer = [`${displayCount}/${totalCount}`, '', formatDuration(totalQueueDuration)]
-			const body = page.map((track, index) => [index.toString(), track.info.title, track.info.isStream ? 'LIVE' : formatDuration(track.info.length)]);
+			const body = page.map((track, index) => [index.toString(), track.info?.title ?? '', track.info?.isStream ? 'LIVE' : formatDuration(track.info?.length ?? 0)]);
 
 			if (currentTrack != null) {
-				body.splice(0, 0, ['[>]', currentTrack.info.title, currentTrack.info.isStream ? 'LIVE' : formatDuration(currentTrack.info.length)]);
+				body.splice(0, 0, ['[>]', currentTrack.info?.title ?? '', currentTrack.info?.isStream ? 'LIVE' : formatDuration(currentTrack.info?.length ?? 0)]);
 			}
 
 			// this makes the table 80 characters wide (seems to be good for smaller screens and allows for more rows to be displayed at once)

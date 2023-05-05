@@ -1,5 +1,5 @@
 import env from './envConfig';
-import tonelist, { InitOptions } from './tonelist';
+import { Tonelist, InitOptions } from './tonelist';
 import initInteractions from './interactions/init';
 import initHTTPServer from './http/init';
 import { PrismaClient } from '@prisma/client'
@@ -22,7 +22,8 @@ const tonelistOptions: InitOptions = {
 	}
 };
 
-tonelist.init(tonelistOptions, async () => {
+const tonelist = new Tonelist(tonelistOptions);
+tonelist.init(async () => {
 	await prisma.$connect();
 	await Promise.all([
 		initInteractions(

@@ -1,27 +1,30 @@
-import { ErrorTypes, TypedError } from "../types";
-import { APIParamLocation, CommandConfig } from "./types";
+import { SlashCommandBuilder } from 'discord.js';
+import { z } from "zod";
+import { CommandConfig } from "./types";
 
-export const remove: CommandConfig = {
+const schema = z.object({
+	guildId: z.string().nonempty(),
+	index: z.number().int().gte(0)
+});
+
+export const remove = {
 	summary: 'Remove a song from the queue',
-	args: {
-		guildId: { type: 'string', required: true, command: false, api: APIParamLocation.PATH, summary: 'The id of the discord server' },
-		index: { type: 'number', required: true, command: true, api: APIParamLocation.BODY, summary: 'The index of the song to remove' }
-	},
-	handler: async (args) => {
-		const {
-			tonelist,
-			guildId
-		} = args;
+	slashCommand: new SlashCommandBuilder()
+		.setName('remove')
+		.setDescription('Remove a song from the queue')
+		.addIntegerOption(option =>
+			option
+				.setName('index')
+				.setDescription('The index of the song to remove')
+				.setRequired(true)
+		),
+	schema,
+	handler: async ({ input, context }) => {
+		const args = schema.parse(input);
 
-		const index = args.index;
-
-		if (index !== 0 && !index) {
-			throw new TypedError(ErrorTypes.INVALID_INDEX);
-		}
-
-		const result = await tonelist.remove({
-			guildId,
-			index
+		const result = await context.tonelist.remove({
+			guildId: args.guildId,
+			index: args.index
 		});
 
 		return {
@@ -29,4 +32,4 @@ export const remove: CommandConfig = {
 			...result
 		};
 	}
-}
+} as const satisfies CommandConfig;

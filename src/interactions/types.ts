@@ -1,6 +1,5 @@
 import { APIInteractionDataResolvedChannel, APIInteractionDataResolvedGuildMember, APIRole, Attachment, ChatInputCommandInteraction, GuildBasedChannel, GuildMember, Interaction, Role, User } from "discord.js"
 import { ApplicationCommandType } from "discord.js";
-import { CommandConfig } from "../commands/types";
 
 export type InteractionChannel = NonNullable<APIInteractionDataResolvedChannel | GuildBasedChannel>;
 export type InteractionRole = NonNullable<Role | APIRole>;
@@ -12,7 +11,6 @@ export type CommandArguments = {
 
 export type InitCommandOptions = {
 	testGuilds?: string[];
-	commands: Record<string, CommandConfig>;
 }
 
 export const isGuildMember = (member: ChatInputCommandInteraction['member']): member is GuildMember =>

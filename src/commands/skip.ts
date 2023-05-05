@@ -1,18 +1,20 @@
-import { APIParamLocation, CommandConfig } from "./types";
+import { z } from "zod";
+import { CommandConfig } from "./types";
+import { SlashCommandBuilder } from "discord.js";
 
 export const skip: CommandConfig = {
 	summary: 'Skip the current song',
-	args: {
-		guildId: { type: 'string', required: true, command: false, api: APIParamLocation.PATH, summary: 'The id of the discord server' },
-	},
-	handler: async (args) => {
-		const {
-			tonelist,
-			guildId
-		} = args;
+	slashCommand: new SlashCommandBuilder()
+		.setName('skip')
+		.setDescription('Skip the current song'),
+	schema: z.object({
+		guildId: z.string().nonempty()
+	}),
+	handler: async ({ context, input }) => {
+		const args = skip.schema.parse(input);
 
-		const result = await tonelist.skip({
-			guildId
+		const result = await context.tonelist.skip({
+			guildId: args.guildId
 		});
 
 		return {
@@ -20,4 +22,4 @@ export const skip: CommandConfig = {
 			...result
 		};
 	}
-}
+} as const satisfies CommandConfig;

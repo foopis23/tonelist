@@ -8,14 +8,14 @@ export const userRouter = router({
 			id: z.string().nonempty()
 		}))
 		.query(async ({ ctx, input }) => {
-			if (ctx.user.id !== input.id && input.id !== '@me') {
+			if (ctx.user?.id !== input.id && input.id !== '@me') {
 				throw new TRPCError({
 					code: 'FORBIDDEN',
 					message: 'You are not authorized to view this user'
 				})
 			}
 
-			const id = input.id === '@me' ? ctx.user.id : input.id;
+			const id = input.id === '@me' ? ctx.user?.id : input.id;
 			return await ctx.prisma.user.findUnique({
 				where: {
 					id

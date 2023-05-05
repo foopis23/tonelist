@@ -145,6 +145,10 @@ export class Tonelist {
 			return null;
 		}
 
+		if (!player.trackData) {
+			throw new Error('Track data not found');
+		}
+
 		return {
 			track: player.track,
 			info: player.trackData,

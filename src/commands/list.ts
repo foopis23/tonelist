@@ -1,16 +1,22 @@
+import { z } from "zod";
 import { formatDuration, formatPlainTextTable } from "../util/text";
-import { APIParamLocation, CommandConfig } from "./types";
+import { CommandConfig } from "./types";
+import { SlashCommandBuilder } from "discord.js";
 
-export const list: CommandConfig = {
+const schema = z.object({
+	guildId: z.string().nonempty()
+});
+
+export const list = {
 	summary: 'List the current queue',
-	args: {
-		guildId: { type: 'string', required: true, command: false, api: APIParamLocation.PATH, summary: 'The id of the discord server' },
-	},
-	handler: async (args) => {
-		const {
-			tonelist,
-			guildId
-		} = args;
+	slashCommand: new SlashCommandBuilder()
+		.setName('list')
+		.setDescription('List the current queue'),
+	schema,
+	handler: async ({ context, input }) => {
+		const args = schema.parse(input);
+		const tonelist = context.tonelist;
+		const guildId = args.guildId;
 
 		const queue = (await tonelist.findOrCreateQueue(guildId));
 		let message = '';
@@ -54,4 +60,4 @@ export const list: CommandConfig = {
 			...queue
 		}
 	}
-};
+} as const satisfies CommandConfig;

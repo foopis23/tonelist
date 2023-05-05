@@ -1,34 +1,37 @@
-import { ErrorTypes, TypedError } from "../types";
-import { APIParamLocation, CommandConfig } from "./types";
+import { z } from "zod";
+import { CommandConfig } from "./types";
+import { SlashCommandBuilder } from "discord.js";
 
-export const enqueue: CommandConfig = {
+const schema = z.object({
+	guildId: z.string().nonempty(),
+	voiceChannelId: z.string().nonempty(),
+	textChannelId: z.string().optional(),
+	query: z.string().nonempty()
+});
+
+export const enqueue = {
 	summary: 'Enqueue a song',
-	args: {
-		guildId: { type: 'string', required: true, command: false, api: APIParamLocation.PATH, summary: 'The id of the discord server' },
-		voiceChannelId: { type: 'string', required: true, command: false, api: APIParamLocation.BODY, summary: 'The id of the voice channel to join if the bot isn\'t currently playing' },
-		textChannelId: { type: 'string', command: false, api: APIParamLocation.BODY, summary: 'The id of the text channel to send queue update messages to' },
-		query: { type: 'string', required: true, command: true, api: APIParamLocation.BODY, summary: 'The link or query to find a song' }
-	},
-	handler: async (args) => {
+	slashCommand: new SlashCommandBuilder()
+		.setName('enqueue')
+		.setDescription('Enqueue a song')
+		.addStringOption(option =>
+			option
+				.setName('query')
+				.setDescription('The link or query to find a song')
+				.setRequired(true)
+		),
+	schema,
+	handler: async ({ context, input }) => {
+		const args = schema.parse(input);
 		const {
-			tonelist,
-			guildId
-		} = args;
-
+			tonelist
+		} = context;
+		const guildId = args.guildId;
 		const voiceChannelId = args.voiceChannelId;
 		const textChannelId = args.textChannelId;
 		const query = args.query;
 
-		if (!voiceChannelId) {
-			throw new TypedError(ErrorTypes.INVALID_VOICE_CHANNEL_ID);
-		}
-
-		if (!query) {
-			throw new TypedError(ErrorTypes.INVALID_QUERY);
-		}
-
 		const lengthBefore = (await tonelist.findOrCreateQueue(guildId)).tracks.length;
-
 		const result = await tonelist.enqueue({
 			guildId,
 			query: query,
@@ -37,8 +40,6 @@ export const enqueue: CommandConfig = {
 		})
 
 		let message = '';
-
-		
 		if (result.queue.tracks && result.queue.tracks.length - lengthBefore > 1) {
 			message = `Enqueued \`${result.queue.tracks[lengthBefore].info?.title}\` and ${result.queue.tracks.length - lengthBefore - 1} more`;
 		} else {
@@ -50,4 +51,4 @@ export const enqueue: CommandConfig = {
 			...result
 		};
 	}
-}
+} as const satisfies CommandConfig;

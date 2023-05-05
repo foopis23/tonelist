@@ -1,18 +1,22 @@
-import { APIParamLocation, CommandConfig } from "./types";
+import { z } from "zod";
+import { CommandConfig } from "./types";
+import { SlashCommandBuilder } from "discord.js";
 
-export const leave: CommandConfig = {
+const schema = z.object({
+	guildId: z.string().nonempty()
+});
+
+export const leave = {
 	summary: 'Leave the voice channel',
-	args: {
-		guildId: { type: 'string', required: true, command: false, api: APIParamLocation.PATH, summary: 'The id of the discord server' },
-	},
-	handler: async (args) => {
-		const {
-			tonelist,
-			guildId
-		} = args;
+	slashCommand: new SlashCommandBuilder()
+		.setName('leave')
+		.setDescription('Leave the voice channel'),
+	schema: schema,
+	handler: async ({ context, input }) => {
+		const args = schema.parse(input);
 
-		const result = await tonelist.leave({
-			guildId
+		const result = await context.tonelist.leave({
+			guildId: args.guildId
 		});
 
 		return {
@@ -20,4 +24,5 @@ export const leave: CommandConfig = {
 			...result
 		};
 	}
-}
+} as const satisfies CommandConfig;
+

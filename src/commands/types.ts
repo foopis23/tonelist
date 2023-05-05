@@ -1,18 +1,13 @@
-import { APIUser, ChatInputCommandInteraction, User } from "discord.js";
+import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
 import { Tonelist } from "../tonelist";
-import { FastifyRequest } from "fastify";
-
-export enum APIParamLocation {
-	QUERY = 'query',
-	PATH = 'path',
-	BODY = 'body',
-}
+import { ZodSchema } from "zod";
+import commands from ".";
 
 export type BaseArgumentConfig = {
 	type: 'string' | 'number' | 'boolean';
 	required?: boolean;
 	command?: boolean;
-	api?: APIParamLocation | false;
+	api?: boolean;
 	summary: string;
 }
 
@@ -31,25 +26,26 @@ export type ObjectArgumentConfig = BaseArgumentConfig & {
 export type CommandArgumentConfig = BaseArgumentConfig | ArrayArgumentConfig | ObjectArgumentConfig;
 
 export type CommandContext = {
-	guildId: string;
-	tonelist: Tonelist;
-	user?: User | APIUser;
-	voiceChannelId?: string;
-	textChannelId?: string;
-	interaction?: ChatInputCommandInteraction;
-	request?: FastifyRequest;
-	query?: string;
-	index?: number;
-	[key: string]: unknown;
+	context: {
+		tonelist: Tonelist;
+		interaction?: ChatInputCommandInteraction;
+	},
+	input: {
+		guildId: string;
+		[key: string]: unknown;
+	}
 }
 
-export type CommandConfig = {
+export interface CommandConfig {
 	summary: string;
-	args: {
-		[key: string]: CommandArgumentConfig
-	},
+	slashCommand: SlashCommandBuilder | Omit<SlashCommandBuilder, "addSubcommand" | "addSubcommandGroup">;
+	schema: ZodSchema;
 	handler: (args: CommandContext) => Promise<{
 		message?: string;
 		[key: string]: unknown;
 	}>;
+}
+
+export function isCommandKey(key: string): key is keyof typeof commands {
+	return key in commands;
 }

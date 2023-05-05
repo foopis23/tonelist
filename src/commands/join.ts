@@ -1,27 +1,24 @@
-import { ErrorTypes, TypedError } from "../types";
-import { APIParamLocation, CommandConfig } from "./types";
+import { z } from "zod";
+import { CommandConfig } from "./types";
+import { SlashCommandBuilder } from "discord.js";
 
-export const join: CommandConfig = {
+const schema = z.object({
+	guildId: z.string().nonempty(),
+	voiceChannelId: z.string().nonempty()
+});
+
+export const join = {
 	summary: 'Join a voice channel',
-	args: {
-		guildId: { type: 'string', required: true, command: false, api: APIParamLocation.PATH, summary: 'The id of the discord server' },
-		voiceChannelId: { type: 'string', required: true, command: false, api: APIParamLocation.BODY, summary: 'The id of the voice channel to join' },
-	},
-	handler: async (args) => {
-		const {
-			tonelist,
-			guildId
-		} = args;
+	slashCommand: new SlashCommandBuilder()
+		.setName('join')
+		.setDescription('Join a voice channel'),
+	schema,
+	handler: async ({ context, input }) => {
+		const args = schema.parse(input);
 
-		const voiceChannelId = args.voiceChannelId;
-
-		if (!voiceChannelId) {
-			throw new TypedError(ErrorTypes.INVALID_VOICE_CHANNEL_ID);
-		}
-
-		const result = await tonelist.join({
-			guildId,
-			voiceChannelId
+		const result = await context.tonelist.join({
+			guildId: args.guildId,
+			voiceChannelId: args.voiceChannelId
 		});
 
 		return {
@@ -29,4 +26,4 @@ export const join: CommandConfig = {
 			...result
 		};
 	}
-}
+} as const satisfies CommandConfig;

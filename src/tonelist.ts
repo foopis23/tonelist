@@ -91,7 +91,6 @@ export class Tonelist {
 		};
 		this.client.on('ready', onReady);
 		this.client.login(this.token);
-		return this;
 	}
 
 	async findQueue(guildId: string) {

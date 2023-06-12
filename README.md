@@ -4,11 +4,11 @@ Tonelist is a Discord Bot that plays music from Youtube and Soundcloud. It has S
 **Tonelist is in early development. It is not yet ready for production use yet. Expect bugs, missing features and API changes.**
 
 ## Features
-- Play music from youtube and soundcloud
-- Slash Commands
-- Queue system
-- Enqueuing multiple songs with Youtube playlists
-- REST API
+- [x] Play music from youtube and soundcloud
+- [x] Slash Commands
+- [x] Queue system
+- [x] Enqueuing multiple songs with Youtube playlists
+- [ ] REST API
 
 ## Commands
 - `enqueue <url>` - Enqueues a song from youtube or soundcloud

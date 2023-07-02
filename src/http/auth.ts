@@ -46,7 +46,7 @@ const auth: FastifyPluginAsync<{ env: EnvConfig }> = async (fastify, { env }) =>
 	fastifyPassport.registerUserSerializer<APIUser, string>(
 		async (user) => user.id
 	);
-	fastifyPassport.registerUserDeserializer<string, User | null>(
+	fastifyPassport.registerUserDeserializer<string, User>(
 		async (userId) => await fastify.prisma.user.findUnique({
 			where: {
 				id: userId
@@ -60,7 +60,7 @@ const auth: FastifyPluginAsync<{ env: EnvConfig }> = async (fastify, { env }) =>
 		clientSecret: env.DISCORD_CLIENT_SECRET,
 		callbackURL: 'http://localhost:3000/api/auth/discord/callback',
 		scope: ['identify', 'guilds'],
-	}, async (accessToken: string, refreshToken: string, _profile: unknown, cb: (err: unknown, user?: unknown) => void) => {
+	}, async (accessToken: string, refreshToken: string, profile: unknown, cb: (err: unknown, user?: unknown) => void) => {
 		const me = await fetch('https://discord.com/api/users/@me', {
 			headers: {
 				'Authorization': `Bearer ${accessToken}`
@@ -97,7 +97,7 @@ const auth: FastifyPluginAsync<{ env: EnvConfig }> = async (fastify, { env }) =>
 
 	fastify.get('/api/auth/discord/callback', {
 		preValidation: fastifyPassport.authenticate('discord', { failureRedirect: '/login' })
-	}, (_req, res) => {
+	}, (req, res) => {
 		res.redirect('/');
 	})
 

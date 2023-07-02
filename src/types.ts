@@ -1,4 +1,4 @@
-import { APIUser, Channel, ChatInputCommandInteraction, DMChannel, Interaction, TextChannel, VoiceChannel } from "discord.js";
+import { APIUser, Channel, DMChannel, TextChannel, VoiceChannel } from "discord.js";
 import { Track } from "@lavaclient/types/v3";
 import { thumbnail } from "ytdl-core";
 
@@ -71,7 +71,3 @@ export const isDMBasedChannel = (channel: Channel): channel is DMChannel => {
 
 export const isAPIUser = (user: unknown): user is APIUser =>
 	typeof (user as APIUser).email === 'string' && typeof (user as APIUser).id === 'string';
-
-export const isChatInputCommandInteraction = (interaction: Interaction): interaction is ChatInputCommandInteraction => {
-	return interaction.isCommand() && !!interaction.options;
-}

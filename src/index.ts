@@ -3,9 +3,6 @@ import tonelist, { InitOptions } from './tonelist';
 import initInteractions from './interactions/init';
 import initHTTPServer from './http/init';
 import { enqueue, join, leave, list, remove, skip } from './commands';
-import { PrismaClient } from '@prisma/client'
-const prisma = new PrismaClient()
-
 
 const commands = {
 	list,
@@ -34,7 +31,6 @@ const tonelistOptions: InitOptions = {
 };
 
 tonelist.init(tonelistOptions, async () => {
-	await prisma.$connect();
 	await Promise.all([
 		initInteractions(
 			tonelist,
@@ -44,11 +40,9 @@ tonelist.init(tonelistOptions, async () => {
 			}
 		),
 		initHTTPServer({
-			tonelist,
-			env,
-			prisma
+			tonelist
 		})
 	])
 
-	tonelist.logger?.info('Tonelist is ready!');
+	tonelist.logger.info('Tonelist is ready!');
 });

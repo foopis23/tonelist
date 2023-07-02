@@ -9,7 +9,7 @@ type CommandBuilder = SlashCommandBuilder | Omit<SlashCommandBuilder, "addSubcom
 function getCommandArguments(command: CommandBuilder, interaction: Interaction): CommandArguments {
 	const commandInteraction: ChatInputCommandInteraction = interaction as ChatInputCommandInteraction;
 
-	return command.options.reduce((acc: Record<string, any>, option) => {
+	return command.options.reduce((acc, option) => {
 		const optionJSON = option.toJSON();
 		switch (optionJSON.type) {
 			case ApplicationCommandOptionType.String:
@@ -92,7 +92,7 @@ function createCommandBuilders(commands: Record<string, CommandConfig>): Record<
 }
 
 async function registerCommands(tonelist: Tonelist, builders: Record<string, CommandBuilder>, testGuilds: string[]) {
-	const applicationCommandManager = tonelist.client?.application?.commands;
+	const applicationCommandManager = tonelist.client.application.commands;
 	if (!applicationCommandManager) {
 		throw new Error('Application command manager not found');
 	}
@@ -113,7 +113,7 @@ async function initInteractions(tonelist: Tonelist, options: InitCommandOptions)
 	const builders = createCommandBuilders(options.commands);
 	await registerCommands(tonelist, builders, options.testGuilds ?? []);
 
-	tonelist.client?.on('interactionCreate', async (interaction) => {
+	tonelist.client.on('interactionCreate', async (interaction) => {
 		if (!interaction.isCommand()) {
 			return;
 		}
@@ -138,16 +138,16 @@ async function initInteractions(tonelist: Tonelist, options: InitCommandOptions)
 			await commandInteraction.deferReply()
 
 			const response = await command.handler({
-				guildId: commandInteraction.guildId ?? '',
+				guildId: commandInteraction.guildId,
 				tonelist,
 				user: commandInteraction.user,
-				voiceChannelId: voiceChannel?.id ?? '',
-				textChannelId: textChannel?.id ?? '',
+				voiceChannelId: voiceChannel.id,
+				textChannelId: textChannel.id,
 				interaction: commandInteraction,
 				...args
 			});
 
-			await commandInteraction.editReply(response.message ?? '');
+			await commandInteraction.editReply(response.message);
 		} catch (e) {
 			if (isTypedError(e)) {
 				await interaction.editReply(e.type);

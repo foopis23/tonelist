@@ -25,7 +25,7 @@ export const remove: CommandConfig = {
 		});
 
 		return {
-			message: `Removed \`${result.removedTrack.info?.title}\``,
+			message: `Removed \`${result.removedTrack.info.title}\``,
 			...result
 		};
 	}

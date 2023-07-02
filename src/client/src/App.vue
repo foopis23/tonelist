@@ -1,18 +1,17 @@
 <script setup lang="ts">
-import { ref } from 'vue';
-
-const me = ref(undefined);
-  fetch("/api/users/me")
-    .then((res) => res.json())
-    .then((data) => (me.value = data));
+import HelloWorld from './components/HelloWorld.vue'
 </script>
 
 <template>
   <div>
-    <a v-if="me === null" class="button" href="/api/auth/discord">Login</a>
-    <div v-else-if="me === undefined">Loading</div>
-    <div v-else> {{ me }}</div>
+    <a href="https://vitejs.dev" target="_blank">
+      <img src="/vite.svg" class="logo" alt="Vite logo" />
+    </a>
+    <a href="https://vuejs.org/" target="_blank">
+      <img src="./assets/vue.svg" class="logo vue" alt="Vue logo" />
+    </a>
   </div>
+  <HelloWorld msg="Vite + Vue" />
 </template>
 
 <style scoped>

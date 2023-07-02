@@ -38,11 +38,10 @@ export const enqueue: CommandConfig = {
 
 		let message = '';
 
-		
-		if (result.queue.tracks && result.queue.tracks.length - lengthBefore > 1) {
-			message = `Enqueued \`${result.queue.tracks[lengthBefore].info?.title}\` and ${result.queue.tracks.length - lengthBefore - 1} more`;
+		if (result.queue.tracks.length - lengthBefore > 1) {
+			message = `Enqueued \`${result.queue.tracks[lengthBefore].info.title}\` and ${result.queue.tracks.length - lengthBefore - 1} more`;
 		} else {
-			message = `Enqueued \`${result.queue.tracks[result.queue.tracks.length - 1].info?.title}\``;
+			message = `Enqueued \`${result.queue.tracks[result.queue.tracks.length - 1].info.title}\``;
 		}
 
 		return {

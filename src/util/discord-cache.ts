@@ -7,7 +7,7 @@ type ReturnTypes = ReturnType<UserManager['cache']['get']>
 	| ReturnType<ChannelManager['cache']['get']>
 	| ReturnType<RoleManager['cache']['get']>;
 
-export async function getItem<V extends ReturnTypes = ReturnTypes>(manager: Managers, id: string): Promise<V | null> {
+export async function getItem<V extends ReturnTypes = ReturnTypes>(manager: Managers, id: string): Promise<V> {
 	const item = manager.cache.get(id);
 
 	if (item) {

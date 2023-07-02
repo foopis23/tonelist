@@ -18,8 +18,8 @@ WORKDIR /home/node/app
 COPY package*.json  ./
 
 RUN npm install --production
-COPY --from=builder /home/node/app/build ./build
+COPY --from=builder /home/node/app/dist ./dist
 
 EXPOSE 3000
 
-CMD ["node", "build/index.js"]
+CMD ["node", "dist/index.js"]

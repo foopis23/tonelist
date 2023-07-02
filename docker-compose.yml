@@ -22,6 +22,8 @@ services:
     image: fredboat/lavalink:latest
     volumes:
       - ./application.yml:/opt/Lavalink/application.yml
+    ports:
+      - "2333:2333"
     logging:
       driver: none
     ports:

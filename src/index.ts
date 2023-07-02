@@ -64,6 +64,7 @@ tonelist.init(initOptions, async () => {
 		initAPI({
 			tonelist,
 			commands,
+			apiKeys: (config.apiKeys) ? config.apiKeys.split(',') : [],
 			baseURL: config.baseUrl ?? 'http://localhost:3000',
 			maxRequestsPerMinute: config.apiMaxRequestsPerMinute
 		})

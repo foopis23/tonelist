@@ -37,9 +37,7 @@ const fastifyVite: FastifyPluginAsync<FastifyViteConfig> = async (fastify, opts 
 			root: config.root,
 			server: {
 				port: config.vitePort,
-				host: true
-			},
-			
+			}
 		});
 		await devServer.listen()
 

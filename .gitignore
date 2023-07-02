@@ -203,4 +203,3 @@ build/
 public/
 .env
 secret-key
-dev.db

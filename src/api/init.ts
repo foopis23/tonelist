@@ -8,14 +8,10 @@ import { guildRoutes } from './guilds';
 import { userRoutes } from './users';
 import fastifyDiscordTokenAuth from './auth/fastify-discord-token-auth';
 import { trackRoutes } from './tracks';
-import cors from '@fastify/cors';
-import { CachedFetchClient } from '../util/cached-fetch';
-import { MemoryStore } from '@foopis23/ts-store';
 
 declare module 'fastify' {
 	interface FastifyRequest {
 		tonelist: Tonelist;
-		fetch: CachedFetchClient['fetch'];
 	}
 }
 
@@ -33,28 +29,10 @@ async function initAPI({ tonelist, commands, baseURL, maxRequestsPerMinute = 100
 		logger: logger,
 	});
 
-	const fetchClient = new CachedFetchClient({
-		cache: new MemoryStore(),
-		cacheTTL: 1000 * 60,
-	})
-
-	await fastify.register(cors, {
-		origin: '*',
-	})
-
-	// set cors header
-	fastify.addHook('onSend', (request, reply, payload, done) => {
-		reply.header('Access-Control-Allow-Origin', '*');
-		done();
-	});
-
 	// add tonelist to request
-	// add cached fetch to request
 	fastify.decorateRequest('tonelist', null);
-	fastify.decorateRequest('fetch', null);
 	fastify.addHook('onRequest', (request, _, done) => {
 		request.tonelist = tonelist;
-		request.fetch = fetchClient.fetch.bind(fetchClient);
 		done();
 	});
 

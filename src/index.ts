@@ -29,7 +29,7 @@ tonelist.init(async () => {
 		initInteractions(
 			tonelist,
 			{
-				...tonelistOptions.commandOptions
+				...tonelistOptions?.commandOptions ?? {}
 			}
 		),
 		initHTTPServer({
@@ -39,5 +39,5 @@ tonelist.init(async () => {
 		})
 	])
 
-	tonelist.logger.info('Tonelist is ready!');
+	tonelist.logger?.info('Tonelist is ready!');
 });

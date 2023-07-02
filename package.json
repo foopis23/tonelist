@@ -20,11 +20,13 @@
     "@typescript-eslint/eslint-plugin": "^5.54.0",
     "@typescript-eslint/parser": "^5.54.0",
     "eslint": "^8.35.0",
+    "express-session": "^1.17.3",
+    "json-schema-to-ts": "^2.7.2",
     "nodemon": "^2.0.20",
     "pino-pretty": "^9.4.0",
+    "prisma": "^4.13.0",
     "ts-node": "^10.9.1",
-    "typescript": "^4.9.5",
-    "@types/passport-oauth2": "^1.4.12"
+    "typescript": "^4.9.5"
   },
   "dependencies": {
     "@fastify/cookie": "^8.3.0",
@@ -36,6 +38,7 @@
     "@quixo3/prisma-session-store": "^3.1.11",
     "@trpc/client": "^10.24.0",
     "@trpc/server": "^10.24.0",
+    "@types/passport-oauth2": "^1.4.12",
     "@vitejs/plugin-vue": "^4.2.1",
     "@vueuse/core": "^10.1.2",
     "cross-env": "^7.0.3",
@@ -49,7 +52,6 @@
     "vue": "^3.2.47",
     "vue-tsc": "^1.6.3",
     "ytdl-core": "^4.11.4",
-    "zod": "^3.21.4",
-    "prisma": "^4.13.0"
+    "zod": "^3.21.4"
   }
 }

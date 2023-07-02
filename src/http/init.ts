@@ -2,21 +2,13 @@ import { Tonelist } from '../tonelist';
 import { resolve } from 'path';
 import { EnvConfig } from '../envConfig';
 import { PrismaClient } from '@prisma/client';
-import { fastifyTRPCPlugin } from '@trpc/server/adapters/fastify';
 import auth from './auth';
 import vite from './vite';
 import Fastify from 'fastify';
-import { appRouter } from './trpc/router';
-import { createContext } from './trpc/context';
 
 
 declare module 'fastify' {
 	interface FastifyInstance {
-		tonelist: Tonelist;
-		prisma: PrismaClient;
-	}
-
-	interface FastifyRequest {
 		tonelist: Tonelist;
 		prisma: PrismaClient;
 	}
@@ -37,23 +29,14 @@ async function initHTTPServer({ tonelist, env, prisma }: InitAPIOptions) {
 	// decorate fastify with resources
 	fastify.decorate('tonelist', tonelist);
 	fastify.decorate('prisma', prisma);
-	fastify.decorateRequest('tonelist', tonelist);
-	fastify.decorateRequest('prisma', prisma);
-	fastify.addHook('onRequest', async (request) => {
-		request.tonelist = tonelist;
-		request.prisma = prisma;
-	});
 
 	// authentication
 	fastify.register(auth, { env });
 
-	// trpc
-	fastify.register(fastifyTRPCPlugin, {
-		prefix: '/api/trpc',
-		trpcOptions: { router: appRouter, createContext },
-	});
+	fastify.get('/api/users/me', async (req) => {
+		return req.user;
+	})
 
-	// frontend
 	fastify.register(vite, {
 		root: resolve(__dirname, '../client')
 	})

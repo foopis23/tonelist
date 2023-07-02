@@ -1,13 +1,14 @@
-# Tonelist2
-Tonelist2 is a Discord Bot that plays music from Youtube and Soundcloud. It has Slash Commands and an API for developers. Its written in typescript with discord.js and lavalink.
+# Tonelist
+Tonelist is a Discord Bot that plays music from Youtube and Soundcloud. It has Slash Commands and an API for developers. Its written in typescript with discord.js and lavalink.
 
-**Tonelist2 is in early development. It is not yet ready for production use yet. Expect bugs, missing features and API changes.**
+**Tonelist is in early development. It is not yet ready for production use yet. Expect bugs, missing features and API changes.**
 
 ## Features
 - Play music from youtube and soundcloud
 - Slash Commands
 - Queue system
 - Enqueuing multiple songs with Youtube playlists
+- REST API
 
 ## Commands
 - `enqueue <url>` - Enqueues a song from youtube or soundcloud
@@ -35,6 +36,8 @@ There are 4 env files. `.env`, `.env.development`, `.env.production`, `.env.loca
 | TEST_GUILDS   | command separated guild ids for to deploy guild commands |
 | LOG_LEVEL     | the log level for the bot                                |
 | NODE_ENV      | development or production                                |
+| API_KEYS      | comma seperated list of api keys to give access to       |
+| BASE_URL      | the base url for the rest api                            |
 
 ## Application.yml
 The `application.yml` file in the root is used to configure lavalink. Its just the default configuration for lavalink. If you are going to run lavalink in docker, you need to mount the `application.yml` file to `/opt/Lavalink/application.yml` in the container.
@@ -53,9 +56,7 @@ version: '3'
 
 services:
   tonelist:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: ghcr.io/foopis23/tonelist:latest
     depends_on:
       - lavalink
     environment:
@@ -65,20 +66,20 @@ services:
       LAVA_PASSWORD: yourpasswordhere
       TOKEN: your_discord_token_here
       CLIENT_ID: your_discord_client_id
+      BASE_URL: http://localhost:3000
+      API_KEYS: insert,created,api,keys,seperated,by,commas
     restart: unless-stopped
-  
+    ports:
+      - "3000:3000"
+
   lavalink:
     image: fredboat/lavalink:latest
     volumes:
       - ./application.yml:/opt/Lavalink/application.yml
-    ports:
-      - "2333:2333"
     logging:
       driver: none
     restart: unless-stopped
 ```
-
-
 
 ## Contributing
 To contribute fork the repo and create a pull request. Please make sure to run `npm run lint` before creating a pull request.
@@ -93,5 +94,5 @@ TEST_GUILDS=DISCORD_SERVER_ID
 ```
 
 ## License
-Tonelist2 is licensed under the MIT License. See [LICENSE](LICENSE) for more information.
+Tonelist is licensed under the MIT License. See [LICENSE](LICENSE) for more information.
 

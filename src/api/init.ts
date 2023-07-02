@@ -6,6 +6,9 @@ import { GetQueueSchema, getQueueHandler, getQueueSchema } from './queues';
 import { default as commandPlugin } from './commands';
 import { CommandConfig } from '../commands/types';
 import fastifyApiKeys from './fastify-api-keys';
+import { getUsersAvailablePlayers, getUsersAvailablePlayersHandler } from './users';
+import fastifyDiscordTokenAuth from './fastify-discord-token-auth';
+import fastifyRateLimit from '@fastify/rate-limit';
 
 declare module 'fastify' {
 	interface FastifyRequest {
@@ -13,7 +16,16 @@ declare module 'fastify' {
 	}
 }
 
-async function initAPI({ tonelist, commands, apiKeys, baseURL }: { tonelist: Tonelist, commands: Record<string, CommandConfig>, apiKeys: string[], baseURL: string }) {
+type InitAPIOptions = {
+	tonelist: Tonelist,
+	commands: Record<string, CommandConfig>,
+	apiKeys: string[],
+	baseURL: string,
+	maxRequestsPerMinute?: number
+}
+
+
+async function initAPI({ tonelist, commands, apiKeys, baseURL, maxRequestsPerMinute = 1000 }: InitAPIOptions) {
 	const logger = tonelist.logger.child({ module: 'api' });
 	const fastify = Fastify({
 		logger: logger,
@@ -44,6 +56,10 @@ async function initAPI({ tonelist, commands, apiKeys, baseURL }: { tonelist: Ton
 						type: 'apiKey',
 						name: 'x-api-key',
 						in: 'header'
+					},
+					bearerAuth: {
+						type: 'http',
+						scheme: 'bearer',
 					}
 				}
 			}
@@ -58,16 +74,37 @@ async function initAPI({ tonelist, commands, apiKeys, baseURL }: { tonelist: Ton
 		keys: apiKeys
 	});
 
-	// register guild routes
+	// setup token auth
+	await fastify.register(fastifyDiscordTokenAuth);
+
 	await fastify.register(async (fastify) => {
+		fastify.register(fastifyRateLimit, {
+			global: true,
+			max: maxRequestsPerMinute,
+			timeWindow: 1000 * 60,
+			ban: 5
+		});
+
 		fastify.addHook('preHandler', fastify.fastifyApiKeys.requiresAuthentication);
 
-		fastify.get<GetQueueSchema>('/queue', {
-			schema: getQueueSchema
-		}, getQueueHandler);
+		// register guild routes
+		await fastify.register(async (fastify) => {
+			fastify.get<GetQueueSchema>('/queue', {
+				schema: getQueueSchema
+			}, getQueueHandler);
 
-		await fastify.register(commandPlugin, { commands });
-	}, { prefix: '/guilds/:guildId' });
+			await fastify.register(commandPlugin, { prefix: '/commands', commands });
+		}, { prefix: '/guilds/:guildId' });
+
+		await fastify.register(async (fastify) => {
+			fastify.addHook('preHandler', fastify.discord.requiresAuthentication);
+
+			fastify.get('/available-players', {
+				schema: getUsersAvailablePlayers
+			}, getUsersAvailablePlayersHandler);
+		}, { prefix: '/users/@me' });
+	});
+
 
 	try {
 		await fastify.listen({ port: 3000, host: '0.0.0.0' });

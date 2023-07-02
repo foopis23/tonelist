@@ -4,3 +4,4 @@ export * from './join';
 export * from './leave';
 export * from './skip';
 export * from './list';
+export * from './shuffle';

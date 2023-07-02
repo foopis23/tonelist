@@ -36,6 +36,10 @@ export type SkipArguments = {
 	guildId: string;
 }
 
+export type ShuffleArguments = {
+	guildId: string;
+}
+
 export type InitOptions = {
 	loggerOptions?: LoggerOptions;
 	clientOptions?: Partial<ClientOptions>;
@@ -293,6 +297,27 @@ export class Tonelist {
 			queue: await this.findOrCreateQueue(guildId),
 			guildId,
 			skipped: currentTrack
+		};
+	}
+
+	async shuffle(args: ShuffleArguments) {
+		const { guildId } = args;
+		const queue = await this.findOrCreateQueue(guildId);
+
+		const currentTrack = queue.tracks.shift();
+
+		for (let i = queue.tracks.length - 1; i > 0; i--) {
+			const j = Math.floor(Math.random() * (i + 1));
+			[queue.tracks[i], queue.tracks[j]] = [queue.tracks[j], queue.tracks[i]];
+		}
+
+		queue.tracks.unshift(currentTrack);
+
+		await this.queues.set(guildId, queue);
+
+		return {
+			queue,
+			guildId
 		};
 	}
 }

@@ -1,3 +1,4 @@
+import { shuffle } from './commands/shuffle';
 import { program, Option } from 'commander';
 import getConfig from './config';
 import tonelist, { InitOptions } from './tonelist';
@@ -49,7 +50,8 @@ const commands = {
 	remove,
 	join,
 	leave,
-	skip
+	skip,
+	shuffle
 }
 
 tonelist.init(initOptions, async () => {
